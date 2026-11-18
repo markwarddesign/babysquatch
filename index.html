@@ -343,11 +343,13 @@ const GIRL_STYLES = {
         eye:'#4f9a62', accent:'#ffcf3f' },
   HA: { hair:'long', headR:36, legLen:58, torsoLen:52, torsoW:42, top:'#8e6bd8', topDk:'#7152b8', legs:'#3f5a8f', shoe:'#7a4a2a',
         eye:'#6b4a2b', accent:'#ff7a5c', freckles:true },
+  GK: { hair:'short', headR:35, legLen:54, torsoLen:56, torsoW:48, top:'#e2574c', topDk:'#bf4038', legs:'#56658a', shoe:'#f4f4f4',
+        eye:'#4f7fbf', accent:'#ff7a5c', glasses:true, frame:'#b0336a', cardigan:true, hairCol:'#ddd3b4', hairDk:'#aa9f80', hairHi:'#f7f3e6' },
 };
 function svgGirl(id, o = {}) {
   const { lx=0, ly=0, rx=0, ry=0, al=0, ar=0, eyes='open', mouth='smile', turn=0 } = o;
   const c = GIRL_STYLES[id], R = c.headR;
-  const skin = '#ffdcc4', skinDk = '#f2bfa0', hair = '#f3cf6b', hairDk = '#d9a83f', hairHi = '#fff0b0';
+  const skin = '#ffdcc4', skinDk = '#f2bfa0', hair = c.hairCol || '#f3cf6b', hairDk = c.hairDk || '#d9a83f', hairHi = c.hairHi || '#fff0b0';
   const hip = 220 - c.legLen, sh = hip - c.torsoLen, hy = sh - R * .78, tw = c.torsoW / 2;
   const legX = [100 - tw * .45, 100 + tw * .45];
   const leg = (i, dx, dy) => `<g transform="translate(${dx} ${dy})">
@@ -372,11 +374,21 @@ function svgGirl(id, o = {}) {
   if (c.hair === 'pigtails') front = [-1, 1].map(s => `<circle cx="${100 + s * (R + 1)}" cy="${hy - 2}" r="5.5" fill="${c.accent}"/>`).join('');
   if (c.hair === 'ponytail') front = `<circle cx="${100 + R - 4}" cy="${hy - R * .55}" r="6" fill="${c.accent}"/>`;
   if (c.hair === 'long') front = `<path d="M${100 - R * .92} ${hy - R * .42} Q100 ${hy - R * 1.32} ${100 + R * .92} ${hy - R * .42}" stroke="${c.accent}" stroke-width="5.5" fill="none" stroke-linecap="round"/>`;
+  if (c.hair === 'short') {   // fluffy, curly short bob
+    for (let k = 0; k <= 10; k++) { const a = Math.PI * (1.02 + k / 10 * .96); back += `<circle cx="${(100 + Math.cos(a) * R).toFixed(1)}" cy="${(hy - 2 + Math.sin(a) * R).toFixed(1)}" r="${R * .32}" fill="${hair}"/>`; }
+    back += [-1, 1].map(s => `<ellipse cx="${100 + s * R * .95}" cy="${hy + R * .08}" rx="${R * .33}" ry="${R * .52}" fill="${hair}"/>
+      <path d="M${100 + s * R * 1.08} ${hy - R * .2} q${s * 5} 8 0 16" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>`).join('');
+    front = [-.55, 0, .55].map(k => `<path d="M${100 + k * R - 6} ${hy - R * 1.02} q6 -8 12 0" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>`).join('');
+  }
   // fringe
   const fy1 = hy - R * .32, fy2 = hy - R * .1, n = 5;
   let fringe = `M${100 - R - 3} ${hy + 6} Q${100 - R - 2} ${hy - R - 8} 100 ${hy - R - 5} Q${100 + R + 2} ${hy - R - 8} ${100 + R + 3} ${hy + 6}`;
-  for (let k = 0; k <= n; k++) { const x = 100 + R * .92 - (k / n) * R * 1.84; fringe += ` Q${(x + R * .18).toFixed(1)} ${fy2.toFixed(1)} ${x.toFixed(1)} ${(k % 2 ? fy1 : fy1 + 4).toFixed(1)}`; }
-  fringe += ' Z';
+  if (c.hair === 'short') fringe = `M${100 - R - 3} ${hy + 4} Q${100 - R - 2} ${hy - R - 10} 100 ${hy - R - 6} Q${100 + R + 2} ${hy - R - 9} ${100 + R + 3} ${hy + 4}
+      Q${100 + R * .75} ${hy - R * .62} ${100 + R * .05} ${hy - R * .5} Q${100 - R * .55} ${hy - R * .32} ${100 - R * .88} ${hy - R * .02} Z`;
+  else {
+    for (let k = 0; k <= n; k++) { const x = 100 + R * .92 - (k / n) * R * 1.84; fringe += ` Q${(x + R * .18).toFixed(1)} ${fy2.toFixed(1)} ${x.toFixed(1)} ${(k % 2 ? fy1 : fy1 + 4).toFixed(1)}`; }
+    fringe += ' Z';
+  }
   const ex = R * .36, ey = hy + R * .14, er = R * .145;
   const eyesSvg = eyes === 'open'
     ? [-1, 1].map(s => `<ellipse cx="${100 + s * ex}" cy="${ey}" rx="${er}" ry="${er * 1.2}" fill="${c.eye}"/><ellipse cx="${100 + s * ex}" cy="${ey + 1}" rx="${er * .6}" ry="${er * .75}" fill="#1d1712"/>
@@ -395,12 +407,22 @@ function svgGirl(id, o = {}) {
       + `<path d="M${100 - 12} ${hip - 14} Q100 ${hip - 8} ${100 + 12} ${hip - 14}" stroke="${c.topDk}" stroke-width="2.5" fill="none"/>
       <path d="M${100 - 5} ${sh + 2} l-1 14 M${100 + 5} ${sh + 2} l1 14" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`;
   if (c.hair === 'long') torso += `<path d="M100 ${sh + 2} L100 ${hip}" stroke="${c.topDk}" stroke-width="2.5"/><rect x="${100 - tw + 2}" y="${hip - 6}" width="${tw * 2 - 4}" height="5" rx="2" fill="${c.topDk}"/>`;
+  if (c.cardigan) torso += `<path d="M${100 - 12} ${sh - 1} L100 ${sh + 24} L${100 + 12} ${sh - 1} Z" fill="#fff8ee"/>
+      <path d="M${100 - 12} ${sh} L${100 - 3} ${hip + 2} M${100 + 12} ${sh} L${100 + 3} ${hip + 2}" stroke="${c.topDk}" stroke-width="2.5" stroke-linecap="round"/>
+      ${[0, 1, 2].map(k => `<circle cx="${100 - 6 + k * 1.2}" cy="${sh + 30 + k * 9}" r="2.4" fill="#fff4d6"/>`).join('')}
+      ${[...Array(9)].map((_, k) => { const t = k / 8; return `<circle cx="${(100 - 12 + t * 24).toFixed(1)}" cy="${(sh + 1 + Math.sin(t * Math.PI) * 9).toFixed(1)}" r="2.3" fill="#fffdf7" stroke="#e6dccb" stroke-width=".6"/>`; }).join('')}
+      <path d="M${100 + tw - 14} ${sh + 30} h10 v8 h-10 z" fill="${c.topDk}"/>`;
+  const glasses = c.glasses ? [-1, 1].map(s => `<rect x="${100 + s * ex - er * 1.9}" y="${ey - er * 1.7}" width="${er * 3.8}" height="${er * 3.3}" rx="${er * 1.3}" fill="#fff" fill-opacity=".2" stroke="${c.frame}" stroke-width="2.6"/>
+      <path d="M${100 + s * (ex + er * 1.9)} ${ey - er * .7} L${100 + s * R * .94} ${ey - er * 1.2}" stroke="${c.frame}" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M${100 + s * (ex + er * 2.3)} ${ey + er * 1.9} l${s * 3} 2.4" stroke="${skinDk}" stroke-width="1.6" stroke-linecap="round"/>`).join('')
+      + `<path d="M${100 - ex + er * 1.9} ${ey - er * .4} Q100 ${ey - er * 1.2} ${100 + ex - er * 1.9} ${ey - er * .4}" stroke="${c.frame}" stroke-width="2.4" fill="none"/>` : '';
+  const ears = c.hair === 'short' ? '' : `<circle cx="${100 - R + 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/><circle cx="${100 + R - 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="200" height="240">
   ${back}
   ${leg(0, lx, ly)}${leg(1, rx, ry)}
   ${torso}
   <rect x="94" y="${sh - 8}" width="12" height="12" rx="4" fill="${skinDk}"/>
-  <circle cx="${100 - R + 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/><circle cx="${100 + R - 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/>
+  ${ears}
   <ellipse cx="100" cy="${hy}" rx="${R}" ry="${R * .96}" fill="${skin}"/>
   <path d="${fringe}" fill="${hair}"/>
   <path d="M${100 - R * .55} ${hy - R * .78} Q100 ${hy - R * 1.02} ${100 + R * .3} ${hy - R * .86}" stroke="${hairHi}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>
@@ -412,6 +434,7 @@ function svgGirl(id, o = {}) {
   ${freckles}
   <path d="M98 ${hy + R * .34} q2 2 4 0" stroke="${skinDk}" stroke-width="2" fill="none" stroke-linecap="round"/>
   ${mouthSvg}
+  ${glasses}
 </g>
   ${arm(-1, al)}${arm(1, ar)}
 </svg>`;
@@ -421,14 +444,14 @@ const CHARS = [
   { id:'A', name:'Rascal', blurb:'Scrappy & brave', size:.82, fn:svgA, jump:{ al:140, ar:-140, mouth:'o' }, fall:{ al:70, ar:-70, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:40, ar:-40 } },
   { id:'B', name:'Goldie', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
   { id:'C', name:'Scruff', blurb:'Wild & shaggy',   size:1.2, fn:svgC, jump:{ al:120, ar:-120, mouth:'o' }, fall:{ al:60, ar:-60, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:35, ar:-35 } },
-  ...[['CL', 'Clara', 6, .9], ['LE', 'Lena', 8, 1.04], ['HA', 'Hannah', 12, 1.22]].map(([id, name, age, size]) => ({
-    id, name, age, girl:true, blurb:`Age ${age}`, size, fn:o => svgGirl(id, o),
+  ...[['CL', 'Clara', 6, .9], ['LE', 'Lena', 8, 1.04], ['HA', 'Hannah', 12, 1.22], ['GK', 'Grandma Kathy', 0, 1.22]].map(([id, name, age, size]) => ({
+    id, name, age, girl:true, blurb:age ? `Age ${age}` : 'Age: top secret', size, fn:o => svgGirl(id, o),
     jump:{ al:125, ar:-125, mouth:'o' }, fall:{ al:55, ar:-55, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:35, ar:-35 } })),
 ];
 CHARS.forEach(c => { c.group = c.girl ? 'girl' : 'squatch'; });
 const isGirl = id => !!(CHARS.find(c => c.id === id) || {}).girl;
 const SPR = {};
-const VIS = { A:.94, B:.82, C:.92, CL:.88, LE:.9, HA:.93 };   // visible-height fraction of each sprite (re-measured on load)
+const VIS = { A:.94, B:.82, C:.92, CL:.88, LE:.9, HA:.93, GK:.9 };   // visible-height fraction of each sprite (re-measured on load)
 // width to draw a squatch so it stands `h` px tall (times its own size unless raw)
 function charW(id, h, raw = false) { const c = CHARS.find(c => c.id === id); return h * (raw ? 1 : c.size) / (1.2 * VIS[id]); }
 function loadSprite(name, svg, w = 150, h = 180) {
@@ -505,7 +528,7 @@ const LEVELS = [
     }
   },
   {
-    name:'Campground Chaos', sky:'sunset', w:132,
+    name:'Campground Chaos', sky:'sunset', w:132, needSib:true,
     tips:['Your little sibling got lost too!', 'Find them before you leave the campground.', 'Bears are grumpy… but make great trampolines.'],
     build(a) {
       a.ground(0, 22, 11); a.add('start', 2, 10);
@@ -576,7 +599,7 @@ const LEVELS = [
   // ---------- helping levels ----------
   {
     name:'Clara\'s Way Back', sky:'day', w:112, goal:'escort', girl:'CL',
-    tips:['Little Clara wandered away from her family\'s camp.', 'Find her, and she\'ll follow you back.', 'Hold ↓ in a bush to hide from hikers and rangers.'],
+    tips:['Last stretch! Clara\'s camp is just ahead.', 'Keep her close and stay out of sight.', 'Hold ↓ in a bush to hide from hikers and rangers.'],
     win:['Clara\'s Safe!', ['Clara is back at camp, safe and sound.', 'She\'ll never forget the friend who helped her.']],
     build(a) {
       a.ground(0, 24, 11); a.add('start', 2, 10);
@@ -608,8 +631,8 @@ const LEVELS = [
   },
   {
     name:'Lena\'s Lost Pages', sky:'day', w:120, goal:'collect', girl:'LE', need:5,
-    tips:['The wind scattered Lena\'s nature journal!', 'Find all 5 pages and bring them back to her camp.', 'One page blew way up high… maybe a bear can help.'],
-    win:['Journal Complete!', ['All 5 pages are back in Lena\'s journal.', 'Page 6 is now a drawing of you.']],
+    tips:['The last pages landed all over this trail!', 'Find them, then bring the journal to Lena\'s camp.', 'One page blew way up high… maybe a bear can help.'],
+    win:['Journal Complete!', ['Every page is back in Lena\'s journal.', 'The last page is now a drawing of you.']],
     build(a) {
       a.ground(0, 26, 11); a.add('start', 2, 10);
       a.berries(4, 10, 3);
@@ -639,7 +662,7 @@ const LEVELS = [
   },
   {
     name:'Hannah\'s Kite', sky:'sunset', w:116, goal:'fetch', girl:'HA',
-    tips:['Hannah\'s kite got stuck at the top of the big pine.', 'Climb the branches and grab it.', 'Then bring it back to Hannah at her camp.'],
+    tips:['The kite finally came down… at the top of the big pine!', 'Climb the branches and grab it.', 'Then bring it back to Hannah at her camp.'],
     win:['Kite Rescued!', ['Hannah\'s kite is flying again.', 'Best. Camping trip. Ever.']],
     build(a) {
       a.ground(0, 22, 11); a.add('start', 2, 10);
@@ -669,18 +692,145 @@ const LEVELS = [
       a.add('skunk', 103, 10);
       a.add('goal', 109, 10, { tent:'#8e6bd8', who:true });
     }
+  },
+  {
+    name:'Grandma Kathy\'s Pie', sky:'day', w:118, goal:'chase', girl:'GK',
+    tips:['The pie bandit is getting tired!', 'Corner it at its hollow log and grab the pie.', 'Then take it to the picnic. Grandma\'s right behind you.'],
+    win:['Pie Party!', ['Grandma Kathy\'s pie is safe and sound.', 'She saved you the biggest slice.']],
+    build(a) {
+      a.ground(0, 22, 11); a.add('start', 3, 10);
+      a.berries(6, 10, 3);
+      a.add('bush', 12, 10);
+      a.plat(14, 8, 4); a.berries(14, 7, 4);
+      a.add('hiker', 19, 10, { range:3 });
+      a.ground(23, 44, 10); a.add('cp', 24, 9);
+      a.add('skunk', 31, 9);
+      a.plat(33, 6, 4); a.berries(33, 5, 4);
+      a.add('bee', 38, 5);
+      a.add('bush', 41, 9);
+      a.water(45, 49); a.plat(46, 9, 3);
+      a.ground(50, 72, 11); a.add('cp', 51, 10);
+      a.add('bear', 59, 10);
+      a.plat(55, 6, 5); a.berries(55, 5, 5);
+      a.add('bush', 63, 10);
+      a.add('ranger', 66, 10, { range:4 });
+      a.add('bush', 70, 10);
+      a.plat(73, 9, 3); a.plat(78, 7, 3);
+      a.ground(82, 117, 11); a.add('cp', 83, 10);
+      a.add('raccoon', 88, 10);
+      a.plat(91, 8, 4); a.plat(96, 6, 4); a.berries(96, 5, 4);
+      a.add('bush', 100, 10);
+      a.add('log', 105, 10);
+      a.add('goal', 111, 10);
+      a.add('thief', 11, 10, { path:[[11, 10], [16, 7], [27, 9], [35, 5], [47, 8], [57, 5], [68, 10], [79, 6], [92, 7], [97, 5], [104, 10]] });
+    }
   }
 ];
+
+/* ---------------- generated levels (so every adventure has 10) ---------------- */
+function rng32(seed) {
+  return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+// Trail pieces. Each starts and ends on normal ground (row 11) so they join up, and reports
+// a perch (where the pie bandit can land) and a spot (where a journal page can float).
+const CHUNK_W = { meadow:10, steps:12, pit:11, pond:12, plateau:14, bear:14, patrol:16, bees:12, critters:12, hop:15 };
+const CHUNKS = {
+  meadow(a, x, d, r) { a.ground(x, x + 9, 11); a.berries(x + 2, 10, 3); if (r() < .6) a.add('bush', x + 6, 10); if (d >= 1 && r() < .7) a.add(r() < .5 ? 'raccoon' : 'skunk', x + 8, 10); return { perch:[x + 7, 10], spot:[x + 5, 8] }; },
+  steps(a, x, d) { a.ground(x, x + 11, 11); a.plat(x + 2, 8, 3); a.plat(x + 6, 6, 3); a.berries(x + 6, 5, 3); if (d >= 2) a.add('bee', x + 9, 4); return { perch:[x + 7, 5], spot:[x + 3, 6] }; },
+  pit(a, x) { a.ground(x, x + 3, 11); a.plat(x + 5, 9, 2); a.ground(x + 8, x + 10, 11); a.berries(x + 5, 8, 2); return { perch:[x + 5, 8], spot:[x + 6, 6] }; },
+  pond(a, x, d, r) { a.ground(x, x + 3, 11); a.water(x + 4, x + 7); a.plat(x + 5, 9, 2); a.ground(x + 8, x + 11, 11); a.berries(x + 5, 8, 2); if (d >= 3 && r() < .6) a.add('raccoon', x + 10, 10); return { perch:[x + 9, 10], spot:[x + 6, 6] }; },
+  plateau(a, x, d, r) { a.ground(x, x + 13, 11); a.ground(x + 4, x + 9, 9); a.berries(x + 5, 7, 3); if (d >= 1) a.add(d >= 4 && r() < .5 ? 'skunk' : 'raccoon', x + 7, 8); if (r() < .5) a.add('bush', x + 12, 10); return { perch:[x + 6, 8], spot:[x + 11, 8] }; },
+  bear(a, x) { a.ground(x, x + 13, 11); a.add('bear', x + 7, 10); a.plat(x + 4, 5, 5); a.berries(x + 4, 4, 5); return { perch:[x + 11, 10], spot:[x + 12, 8] }; },
+  patrol(a, x, d) { a.ground(x, x + 15, 11); a.add('bush', x + 3, 10); a.add('bush', x + 12, 10); a.add(d >= 3 ? 'ranger' : 'hiker', x + 8, 10, { range:4 }); a.plat(x + 6, 8, 4); a.berries(x + 6, 7, 4); return { perch:[x + 7, 7], spot:[x + 14, 8] }; },
+  bees(a, x) { a.ground(x, x + 11, 11); a.plat(x + 3, 8, 3); a.plat(x + 7, 7, 3); a.add('bee', x + 6, 5); a.berries(x + 7, 6, 3); return { perch:[x + 8, 6], spot:[x + 4, 6] }; },
+  critters(a, x, d) { a.ground(x, x + 11, 11); a.add('skunk', x + 4, 10); if (d >= 2) a.add('raccoon', x + 9, 10); a.berries(x + 2, 10, 2); a.berries(x + 7, 9, 2); a.add('bush', x + 11, 10); return { perch:[x + 6, 10], spot:[x + 6, 8] }; },
+  hop(a, x) { a.ground(x, x + 2, 11); a.plat(x + 4, 9, 2); a.plat(x + 8, 8, 2); a.ground(x + 12, x + 14, 11); a.berries(x + 8, 7, 2); return { perch:[x + 8, 7], spot:[x + 4, 7] }; },
+};
+const START_W = 7, END_W = 10;
+function genLevel(o) {
+  const r = rng32(o.seed), n = 5 + Math.floor(o.d / 2);
+  const pool = ['meadow', 'steps', 'pit', 'plateau', 'critters', 'pond', 'patrol', 'bear', ...(o.d >= 2 ? ['bees'] : []), ...(o.d >= 3 ? ['hop'] : [])];
+  const list = [];
+  for (let k = 0; k < n; k++) { let t; do t = pool[Math.floor(r() * pool.length)]; while (t === list[k - 1]); list.push(t); }
+  if (o.lostAt != null) list[o.lostAt] = 'meadow';
+  const w = START_W + list.reduce((s, t) => s + CHUNK_W[t], 0) + END_W;
+  return {
+    name:o.name, sky:o.sky, w, goal:o.goal, girl:o.girl, needSib:o.lostAt != null, kiteAhead:o.kiteAhead, tips:o.tips, girlTips:o.girlTips,
+    build(a) {
+      const r2 = rng32(o.seed * 7 + 3);
+      a.ground(0, START_W - 1, 11); a.add('start', 4, 10);
+      if (o.table) a.add('table', 1, 10); else a.berries(1, 10, 2);
+      let x = START_W; const perches = [], spots = [];
+      list.forEach((t, k) => {
+        if (k && k % 3 === 0) a.add('cp', x + 1, 10);
+        const c = CHUNKS[t](a, x, o.d, r2); perches.push(c.perch); spots.push(c.spot);
+        if (k === o.lostAt) a.add('lost', x + 4, 10);
+        x += CHUNK_W[t];
+      });
+      a.ground(x, x + END_W - 1, 11); a.add('tent', x + 3, 10, { color:o.tent }); a.add('sign', x + 7, 10);
+      for (let p = 0; p < (o.pages || 0); p++) { const [sx, sy] = spots[Math.floor((p + .5) * n / o.pages)]; a.add('page', sx, sy); }
+      if (o.thief) a.add('thief', 9, 10, { path:[[9, 10], ...perches, [x + END_W + 4, 6]], escape:true });
+    }
+  };
+}
+const GEN = {
+  home:{ tent:'#e9a23b', d0:2, skies:['day', 'day', 'sunset', 'sunset', 'sunset', 'night', 'night'],
+    names:['Huckleberry Hollow', 'Fern Gully', 'Rushing Creek', 'Ranger Ridge', 'Bear Meadow', 'Owl Woods', 'Misty Switchbacks'],
+    story:['The sweetest berries in the forest grow here.', 'Lots of hikers on this trail. Bushes are your friend.', 'Squatches and cold water don\'t mix. Hop across!',
+      'Rangers patrol this ridge at sunset.', 'Bears nap here. Bounce gently.', 'Night is falling. The owls are watching.', 'So close! You can almost smell the den.'],
+    tip:'Keep the little one close!' },
+  clara:{ goal:'escort', girl:'CL', tent:'#ff8fb6', lostAt:1, skies:['day', 'day', 'day', 'sunset', 'day', 'day', 'sunset', 'night', 'day'],
+    names:['Where\'s Clara?', 'Bunny Path', 'Mossy Rocks', 'Dragonfly Pond', 'Pinecone Hill', 'Hiker Highway', 'Sunset Stroll', 'Night Hike', 'Morning Mist'],
+    story:['Little Clara wandered away from her family\'s camp!', 'Clara wants to pet every bunny. No time!', 'Careful on the rocks. Clara copies everything you do.',
+      'Clara says she can\'t swim. Neither can you!', 'Clara is collecting pinecones. Keep moving!', 'Lots of hikers today. Bushes are your friend.',
+      'The sun is going down. Clara is getting sleepy.', 'It\'s dark! Clara is holding on tight.', 'A brand new morning. Camp can\'t be far now!'],
+    tip:'Clara follows right behind you.', first:'Find her, then lead her home. It\'s a long way!' },
+  lena:{ goal:'collect', girl:'LE', tent:'#35b3a4', pages:2, skies:['day', 'day', 'sunset', 'day', 'day', 'sunset', 'day', 'night', 'day'],
+    names:['Windy Meadow', 'Paper Trail', 'Fluttering Ferns', 'Lily Pond', 'Blustery Bluff', 'Birdwatch Ridge', 'Sketchbook Creek', 'Firefly Night', 'Gusty Gulch'],
+    story:['A big gust scattered Lena\'s nature journal across the forest!', 'Pages love high places. Jump for them!', 'A page is hiding among the ferns.',
+      'One page is drifting over the pond.', 'The wind up here is wild!', 'Lena drew every bird on this ridge.', 'Lena sketched this creek last summer.',
+      'Fireflies light up the pages at night.', 'Last trail before Lena\'s camp!'],
+    tip:'Find both pages on each trail before moving on.', first:'Find both pages on each trail, then take the sign.' },
+  hannah:{ goal:'fetch', girl:'HA', tent:'#8e6bd8', kiteAhead:true, skies:['day', 'day', 'sunset', 'day', 'sunset', 'sunset', 'day', 'night', 'sunset'],
+    names:['String Snap!', 'Up, Up and Away', 'Breezy Ridge', 'Cloud Chaser', 'Lakeside Gusts', 'Swooping Hills', 'Tailwind Trail', 'Starry Skies', 'Pine Country'],
+    story:['Snap! Hannah\'s kite string broke!', 'The kite is riding the breeze over the trees.', 'A big gust! The kite zooms over the ridge.',
+      'The kite is playing tag with the clouds.', 'Don\'t let it land in the lake!', 'The kite swoops low… then up again.', 'The wind is at your back. Go fast!',
+      'You can just see the kite against the stars.', 'The wind is dying down. Watch for the tallest pine!'],
+    tip:'Keep your eyes on the sky!', first:'Follow the kite as the wind carries it away.' },
+  kathy:{ goal:'chase', girl:'GK', tent:'#e2574c', thief:true, skies:['day', 'day', 'day', 'sunset', 'day', 'sunset', 'day', 'night', 'day'],
+    names:['Pie Thief!', 'Crumb Trail', 'Sticky Paws', 'Berry Bandit', 'Raccoon Run', 'Purple Paw Prints', 'Over the Creek', 'Midnight Snack', 'Almost Caught!'],
+    story:['A sneaky raccoon swiped Grandma Kathy\'s huckleberry pie!', 'Follow the trail of pie crumbs!', 'That raccoon has purple paws now.',
+      'It keeps hopping away. Don\'t give up!', 'Grandma says she\'s "just warming up."', 'Follow the purple paw prints!', 'This recipe won Grandma a blue ribbon.',
+      'It\'s dark, but you can still smell that pie.', 'The bandit is running out of places to hide!'],
+    tip:'Get close and it hops away. Keep chasing!', first:'Chase it down. Grandma is right behind you.' },
+};
+function genLevels(id) {
+  const g = GEN[id], out = [];
+  g.names.forEach((name, k) => {
+    const first = k === 0 && g.first;
+    const tips = [g.story[k], first || g.tip, first ? g.tip : 'Hold ↓ in a bush to hide. Bounce on critters to shoo them.'];
+    out.push(LEVELS.push(genLevel({ seed:(id.length * 977 + k * 131 + id.charCodeAt(0)) | 0, d:(g.d0 || 0) + k, sky:g.skies[k], name, tips, girlTips:tips,
+      goal:g.goal, girl:g.girl, tent:g.tent, lostAt:k === 0 ? g.lostAt : undefined, pages:g.pages, kiteAhead:g.kiteAhead,
+      thief:g.thief, table:g.thief && k === 0 })) - 1);
+  });
+  return out;
+}
 LEVELS[0].girlTips = ['You spotted tiny squatch footprints on the trail!', 'Hold ↓ in a bush to hide when hikers look your way.', 'Jump on raccoons and skunks to shoo them off.'];
 LEVELS[1].girlTips = ['A baby squatch got caught in a ranger\'s net!', 'Free it before you leave the campground.', 'Bears are grumpy… but make great trampolines.'];
 LEVELS[2].girlTips = ['Night has fallen. Mama Squatch is waiting!', 'Stay out of the rangers\' flashlight beams.', 'Get the baby squatch home to the den.'];
 
 const ADVENTURES = [
-  { id:'home', name:'The Long Way Home', blurb:'A 3-level squatch story', levels:[0, 1, 2] },
-  { id:'clara', name:'Clara\'s Way Back', blurb:'Lead Clara back to camp', girl:'CL', levels:[3] },
-  { id:'lena', name:'Lena\'s Lost Pages', blurb:'Find 5 journal pages', girl:'LE', levels:[4] },
-  { id:'hannah', name:'Hannah\'s Kite', blurb:'Rescue her stuck kite', girl:'HA', levels:[5] },
+  { id:'home', name:'The Long Way Home', blurb:'Get home to Mama', levels:[0, 1, ...genLevels('home'), 2] },
+  { id:'clara', name:'Clara\'s Way Back', blurb:'Lead Clara back to camp', girl:'CL', levels:[...genLevels('clara'), 3] },
+  { id:'lena', name:'Lena\'s Lost Pages', blurb:'Find her journal pages', girl:'LE', levels:[...genLevels('lena'), 4] },
+  { id:'hannah', name:'Hannah\'s Kite', blurb:'Chase her runaway kite', girl:'HA', levels:[...genLevels('hannah'), 5] },
+  { id:'kathy', name:'Grandma\'s Pie', blurb:'Catch the pie bandit', girl:'GK', levels:[...genLevels('kathy'), 6] },
 ];
+// saved progress: which level of each adventure you're up to
+let PROG = {};
+try { PROG = JSON.parse(localStorage.getItem('squatchProg')) || {}; } catch (e) {}
+function saveProg(id, n) { PROG[id] = n; try { localStorage.setItem('squatchProg', JSON.stringify(PROG)); } catch (e) {} }
+const pagesIn = ids => ids.reduce((n, i) => n + buildLevel(i).defs.filter(d => d.type === 'page').length, 0);
 
 let L = null, E = null, P = null, hist = [], parts = [];
 const cam = { x:0, y:0 };
@@ -713,11 +863,14 @@ const SKINS = ['#f1c27d', '#c68642', '#8d5524', '#e0ac69', '#ffdbac'];
 
 function loadLevel(i, retry) {
   G.level = i; L = buildLevel(i);
-  if (retry) { G.berries = G.lvlBerries; G.hasSib = G.lvlSib; } else { G.lvlBerries = G.berries; G.lvlSib = G.hasSib; }
+  if (retry) { G.berries = G.lvlBerries; G.hasSib = G.lvlSib; G.pages = G.lvlPages; } else { G.lvlBerries = G.berries; G.lvlSib = G.hasSib; G.lvlPages = G.pages; }
+  if (L.goal === 'chase') G.hasSib = true;   // Grandma is with you from the start
+  if (L.goal === 'collect') L.need = G.pagesTotal;
+  if (G.adv) saveProg(G.adv.id, Math.max(0, G.adv.levels.indexOf(i)));
   G.hearts = 3; G.banner = null; G.flash = 0; parts = [];
-  E = { humans:[], critters:[], bees:[], berries:[], bushes:[], cps:[], signs:[], tents:[], sib:null, den:null, goal:null, pages:[], kite:null, trees:[] };
-  G.pages = 0; G.kite = false;
-  G.follow = L.goal === 'escort' ? L.girl : G.sib;
+  E = { humans:[], critters:[], bees:[], berries:[], bushes:[], cps:[], signs:[], tents:[], sib:null, den:null, goal:null, pages:[], kite:null, trees:[], tables:[], logs:[], thief:null };
+  G.kite = false; G.pie = false;
+  G.follow = (L.goal === 'escort' || L.goal === 'chase') ? L.girl : G.sib;
   let start = { tx:2, ty:10 };
   for (const d of L.defs) {
     const bx = d.tx * T + T / 2, bottom = (d.ty + 1) * T;
@@ -730,7 +883,14 @@ function loadLevel(i, retry) {
       case 'sign': E.signs.push({ x:bx, bottom }); break;
       case 'den': E.den = { x:bx, bottom }; break;
       case 'sib': E.sib = { x:bx, bottom, freed:G.hasSib, kind:'net' }; break;
-      case 'lost': E.sib = { x:bx, bottom, freed:false, kind:'lost' }; break;
+      case 'lost': if (!G.hasSib) E.sib = { x:bx, bottom, freed:false, kind:'lost' }; break;
+      case 'table': E.tables.push({ x:bx, bottom }); break;
+      case 'log': E.logs.push({ x:bx, bottom }); break;
+      case 'thief': {
+        const path = d.path.map(([tx, ty]) => ({ x:tx * T + T / 2, b:(ty + 1) * T }));
+        E.thief = { path, i:0, x:path[0].x, b:path[0].b, hop:null, dir:-1, got:false, gone:false, flee:0, escape:!!d.escape };
+        break;
+      }
       case 'goal': E.goal = { x:bx, bottom, tent:d.tent, who:d.who ? L.girl : null }; break;
       case 'page': E.pages.push({ x:bx, y:d.ty * T + T / 2, got:false, ph:Math.random() * 6 }); break;
       case 'kite': E.kite = { x:bx, y:d.ty * T + T / 2, got:false }; break;
@@ -756,7 +916,18 @@ function loadLevel(i, retry) {
   cam.x = clamp(P.x - W * .4, 0, L.w * T - W); cam.y = ROWS * T - H;
   G.state = 'intro';
 }
-function startGame() { G.berries = 0; G.hasSib = false; loadLevel(G.adv.levels[0]); }
+function startGame(from = 0) {
+  G.berries = 0; G.hasSib = false; G.pages = 0;
+  G.pagesTotal = pagesIn(G.adv.levels);
+  if (from) {   // resuming: count what was already done on earlier levels
+    const before = G.adv.levels.slice(0, from);
+    G.hasSib = before.some(i => LEVELS[i].needSib);
+    G.pages = pagesIn(before);
+  }
+  loadLevel(G.adv.levels[from]);
+}
+const advStep = () => G.adv.levels.indexOf(G.level) + 1;
+function finishAdventure() { saveProg(G.adv.id, 0); }
 const nameOf = id => (CHARS.find(c => c.id === id) || {}).name || '';
 function restartLevel() { loadLevel(G.level, true); }
 function quitToMenu() {
@@ -912,13 +1083,17 @@ function updatePlay(dt) {
   // exit sign
   for (const sg of E.signs) {
     if (Math.abs(sg.x - (p.x + p.w / 2)) < 24 && Math.abs(sg.bottom - (p.y + p.h)) < 50) {
-      if (G.level === 1 && !G.hasSib) { if (!G.banner || G.banner.t < 1) banner(`Wait! Find ${nameOf(G.follow)} first.`, 2); }
+      let wait = null;
+      const left = E.pages.filter(pg => !pg.got).length;
+      if (L.needSib && !G.hasSib) wait = `Wait! Find ${nameOf(G.follow)} first.`;
+      else if (left) wait = `${left} more page${left > 1 ? 's' : ''} to find on this trail!`;
+      if (wait) { if (!G.banner || G.banner.t < 1) banner(wait, 2); }
       else { loadLevel(G.adv.levels[G.adv.levels.indexOf(G.level) + 1]); return; }
     }
   }
   // den
   if (E.den && p.x + p.w / 2 > E.den.x - 30) {
-    G.state = 'win'; G.timer = 3; sfx.win(); P.vx = 0; P.crouch = false; P.hidden = false;
+    G.state = 'win'; G.timer = 3; sfx.win(); P.vx = 0; P.crouch = false; P.hidden = false; finishAdventure();
     P.x = E.den.x - 20 - P.w / 2; P.face = 1; G.winX = E.den.x; G.winY = E.den.bottom - 110;
     return;
   }
@@ -926,7 +1101,7 @@ function updatePlay(dt) {
   for (const pg of E.pages) {
     if (!pg.got && Math.abs(pg.x - (p.x + p.w / 2)) < 26 && Math.abs(pg.y - (p.y + p.h / 2)) < 36) {
       pg.got = true; G.pages++; sfx.cp();
-      banner(G.pages < L.need ? `Page ${G.pages} of ${L.need}!` : 'All pages found! Back to Lena!', 1.6);
+      banner(G.pages < G.pagesTotal ? `Page ${G.pages} of ${G.pagesTotal}!` : 'All pages found! Back to Lena!', 1.6);
       emit(10, pg.x, pg.y, 'spark', { color:'#fff6c8', g:0, life:.6, spread:200, vy:-60 });
     }
   }
@@ -935,16 +1110,41 @@ function updatePlay(dt) {
     k.got = true; G.kite = true; sfx.rescue(); banner('Got the kite! Now take it to Hannah.', 2.4);
     emit(14, k.x, k.y, 'spark', { color:'#ffd23f', g:0, life:.7, spread:220, vy:-60 });
   }
+  // the pie bandit: hops to its next perch whenever you get close
+  const th = E.thief;
+  if (th && !th.got && !th.gone) {
+    const pcx = p.x + p.w / 2;
+    if (th.hop) {
+      const hp = th.hop; hp.t = Math.min(1, hp.t + dt / hp.dur);
+      th.x = hp.x0 + (hp.x1 - hp.x0) * hp.t; th.b = hp.b0 + (hp.b1 - hp.b0) * hp.t - Math.sin(hp.t * Math.PI) * hp.h;
+      if (hp.t >= 1) {
+        th.hop = null; th.dir = -1;
+        if (th.escape && th.i === th.path.length - 1) { th.gone = true; banner('It got away! Keep chasing!', 2); }
+      }
+    } else if (th.i < th.path.length - 1 && th.x - pcx < 230) {
+      const to = th.path[++th.i];
+      th.hop = { x0:th.x, b0:th.b, x1:to.x, b1:to.b, t:0, dur:.55 + Math.abs(to.x - th.x) / 650, h:90 + Math.max(0, th.b - to.b) * .6 };
+      th.dir = 1; sfx.hide();
+      if (th.i === 1 && G.adv.levels.indexOf(G.level) === 0) banner('After that raccoon!', 1.8);
+    } else if (!th.escape && Math.abs(th.x - pcx) < 34 && Math.abs(th.b - (p.y + p.h)) < 56) {
+      th.got = true; th.flee = 1.2; G.pie = true; sfx.rescue();
+      banner('Got the pie! Take it to the picnic.', 2.4);
+      emit(14, th.x, th.b - 30, 'spark', { color:'#ffd23f', g:0, life:.7, spread:220, vy:-60 });
+      emit(8, th.x, th.b - 12, 'poof', { color:'rgba(255,255,255,.9)', g:0, life:.4, size:7, spread:180 });
+    }
+  }
+  if (th && th.got && th.flee > 0) { th.flee -= dt; th.x += 200 * dt; th.dir = 1; }
   // helping goal
   const gl = E.goal;
   if (gl && Math.abs(gl.x - (p.x + p.w / 2)) < 40 && Math.abs(gl.bottom - (p.y + p.h)) < 60) {
     let msg = null;
     if (L.goal === 'escort' && !G.hasSib) msg = `${nameOf(L.girl)} is still lost out there!`;
-    if (L.goal === 'collect' && G.pages < L.need) { const n = L.need - G.pages; msg = `${nameOf(L.girl)} still needs ${n} more page${n > 1 ? 's' : ''}!`; }
+    if (L.goal === 'collect' && G.pages < G.pagesTotal) { const n = G.pagesTotal - G.pages; msg = `${nameOf(L.girl)} still needs ${n} more page${n > 1 ? 's' : ''}!`; }
     if (L.goal === 'fetch' && !G.kite) msg = 'The kite is still stuck in the big pine!';
+    if (L.goal === 'chase' && !G.pie) msg = 'That sneaky raccoon still has the pie!';
     if (msg) { if (!G.banner || G.banner.t < 1) banner(msg, 2); }
     else {
-      G.state = 'win'; G.timer = 2.5; sfx.win(); P.vx = 0; P.crouch = false; P.hidden = false; P.face = 1;
+      G.state = 'win'; G.timer = 2.5; sfx.win(); P.vx = 0; P.crouch = false; P.hidden = false; P.face = 1; finishAdventure();
       G.winX = gl.x + 10; G.winY = gl.bottom - 110; G.banner = null; P.x = gl.x - 96 - P.w / 2; P.y = gl.bottom - P.h; P.vy = 0;
       return;
     }
@@ -1004,7 +1204,7 @@ function selItems() {
   if (SEL.step === 'adv') return ADVENTURES.map(a => ({ kind:'adv', a, blocked:a.girl === G.hero }));
   return CHARS.filter(c => !c.girl).map(c => ({ kind:'char', c, blocked:c.id === G.hero }));
 }
-function cardGeom(n) { return n === 4 ? { w:204, h:288, gap:222 } : { w:210, h:288, gap:250 }; }
+function cardGeom(n) { return n >= 5 ? { w:172, h:288, gap:184 } : n === 4 ? { w:204, h:288, gap:222 } : { w:210, h:288, gap:250 }; }
 const cardX = (i, n) => W / 2 + (i - (n - 1) / 2) * cardGeom(n).gap;
 const PILLS = { y:88, h:34, w:132 };
 function firstOpen(items, pref) { if (pref >= 0 && items[pref] && !items[pref].blocked) return pref; return Math.max(0, items.findIndex(it => !it.blocked)); }
@@ -1060,7 +1260,8 @@ function updateSelect(dt) {
 function beginAdventure() {
   if (G.sib === G.hero || isGirl(G.sib)) G.sib = CHARS.find(c => !c.girl && c.id !== G.hero).id;
   try { localStorage.setItem('squatchPick', JSON.stringify({ hero:G.hero, sib:G.sib, adv:G.adv.id })); } catch (e) {}
-  startGame();
+  const from = PROG[G.adv.id] || 0;
+  startGame(from > 0 && from < G.adv.levels.length ? from : 0);
 }
 
 function update(dt) {
@@ -1390,6 +1591,10 @@ function drawSibling() {
   else if (G.time % 3.3 < .12) frame = F + '_blink';
   if (G.state === 'win') frame = Math.floor(G.time * 3 + 1) % 2 ? F + '_jump' : F + '_idle';
   drawSprite(frame, sx, sb, charW(F, followBase(F)), face < 0, 1, 1, 1, moving && !air ? .06 : 0);
+  if (L.goal === 'chase' && G.state === 'play' && G.time % 7 < 2.2) {
+    const lines = G.pie ? ['My hero!', 'Smell that pie!', 'Picnic time!'] : ['Get my pie!', 'Go, go, go!', 'You rascal!', 'That\'s MY pie!'];
+    bubble(lines[Math.floor(G.time / 7) % lines.length], sx + 44, sb - followBase(F) * charById(F).size - 28 + Math.sin(G.time * 4) * 2, '#bf4038');
+  }
 }
 function drawCampfire(x, y) {
   ctx.fillStyle = '#6a4326'; rr(x - 18, y - 8, 36, 7, 3); ctx.fill();
@@ -1399,7 +1604,68 @@ function drawCampfire(x, y) {
   ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.moveTo(x - 6, y - 8); ctx.quadraticCurveTo(x - 4, y - 20, x + f2 * .5, y - 26); ctx.quadraticCurveTo(x + 5, y - 18, x + 6, y - 8); ctx.fill();
   if (Math.random() < .08) emit(1, x, y - 30, 'spark', { color:'#ffb347', g:-60, life:.8, spread:30, vy:-20, size:2.5 });
 }
+function drawPie(x, y, s = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.moveTo(-23, -7); ctx.lineTo(23, -7); ctx.lineTo(17, 4); ctx.lineTo(-17, 4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e8b765'; ctx.beginPath(); ctx.ellipse(0, -8, 24, 8.5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6a2f7e'; ctx.beginPath(); ctx.ellipse(0, -9, 18, 5.5, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#d99a45'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(k * 10 - 3, -14); ctx.lineTo(k * 10 + 3, -4); ctx.moveTo(-17 + (k + 1) * 2, -12 + (k + 1) * 3); ctx.lineTo(17 - (k + 1) * 2, -12 + (k + 1) * 3); ctx.stroke(); }
+  ctx.fillStyle = '#f0c77a'; for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; circle(Math.cos(a) * 22, -8 + Math.sin(a) * 7.5, 2.6); }
+  ctx.restore();
+}
+function drawPicnic(g) {
+  const x = g.x, b = g.bottom;
+  for (let i = 0; i < 11; i++) for (let j = 0; j < 2; j++) { ctx.fillStyle = (i + j) % 2 ? '#fff6ee' : '#e2574c'; ctx.fillRect(x - 24 + i * 12 - j * 4, b - 12 + j * 6, 12, 6); }
+  ctx.fillStyle = '#b7834a'; rr(x + 66, b - 30, 34, 24, 5); ctx.fill();
+  ctx.strokeStyle = '#8a5a2e'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x + 83, b - 30, 13, Math.PI, 0); ctx.stroke();
+  ctx.strokeStyle = '#9c6a38'; ctx.lineWidth = 1.5; for (let k = 1; k < 4; k++) { ctx.beginPath(); ctx.moveTo(x + 66, b - 30 + k * 6); ctx.lineTo(x + 100, b - 30 + k * 6); ctx.stroke(); }
+  ctx.fillStyle = '#e2574c'; ctx.beginPath(); ctx.moveTo(x + 70, b - 30); ctx.lineTo(x + 84, b - 36); ctx.lineTo(x + 90, b - 30); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(x - 2, b - 8, 10, 3.5, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(x + 22, b - 8, 10, 3.5, 0, 0, 7); ctx.fill();
+  if (G.state === 'win') {
+    drawPie(x + 46, b - 6, .9);
+    if (Math.random() < .08) emit(1, x + 46 + (Math.random() - .5) * 20, b - 22, 'poof', { color:'rgba(255,255,255,.55)', g:-70, life:1.1, spread:16, vy:-20, size:4 });
+  }
+  ctx.fillStyle = '#7a5230'; ctx.fillRect(x + 128, b - 64, 6, 64);
+  ctx.fillStyle = '#b07d48'; rr(x + 100, b - 78, 62, 24, 6); ctx.fill();
+  ctx.fillStyle = '#4a2e18'; ctx.font = '700 13px Fredoka, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('PICNIC', x + 131, b - 61);
+}
+function drawTable(t) {
+  const x = t.x, b = t.bottom;
+  ctx.fillStyle = '#7a5230'; rr(x - 44, b - 44, 8, 44, 3); ctx.fill(); rr(x + 36, b - 44, 8, 44, 3); ctx.fill();
+  ctx.fillStyle = '#946036'; rr(x - 60, b - 20, 120, 7, 3); ctx.fill();
+  ctx.fillStyle = '#a8703f'; rr(x - 54, b - 50, 108, 9, 3); ctx.fill();
+  for (let k = 0; k < 8; k++) { ctx.fillStyle = k % 2 ? '#fff6ee' : '#e2574c'; ctx.fillRect(x - 52 + k * 13, b - 52, 13, 5); ctx.fillRect(x - 52 + k * 13, b - 47, 13, k % 2 ? 9 : 6); }
+  ctx.fillStyle = '#9aa3ad'; ctx.beginPath(); ctx.ellipse(x + 8, b - 55, 18, 5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c4ccd4'; ctx.beginPath(); ctx.ellipse(x + 8, b - 56, 13, 3, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#e8b765'; circle(x + 1, b - 56, 1.6); circle(x + 14, b - 55, 1.3); circle(x + 30, b - 54, 1.4); circle(x + 40, b - 50, 1.2);
+  ctx.fillStyle = '#6a2f7e'; [[46, -46], [56, -38], [64, -26], [74, -12]].forEach(([dx, dy]) => { circle(x + dx, b + dy, 2.2); circle(x + dx + 4, b + dy - 3, 1.2); });
+}
+function drawLog(l) {
+  const x = l.x - 16, b = l.bottom;
+  ctx.fillStyle = '#6b4626'; rr(x, b - 46, 104, 46, 18); ctx.fill();
+  ctx.strokeStyle = '#5a3a1e'; ctx.lineWidth = 2; for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.moveTo(x + 22, b - 36 + k * 12); ctx.lineTo(x + 96, b - 34 + k * 12); ctx.stroke(); }
+  ctx.fillStyle = '#a77a4a'; ctx.beginPath(); ctx.ellipse(x + 4, b - 23, 14, 23, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#2e1d10'; ctx.beginPath(); ctx.ellipse(x + 4, b - 23, 9, 17, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#5f9e3f'; circle(x + 40, b - 46, 7); circle(x + 52, b - 47, 5); circle(x + 84, b - 45, 6);
+}
+function drawThief(th) {
+  if (th.gone || (th.got && th.flee <= 0)) return;
+  const last = th.i === th.path.length - 1 && !th.escape;
+  ctx.save(); if (th.got) ctx.globalAlpha = Math.max(0, th.flee / 1.2);
+  const shake = last && !th.got ? Math.sin(G.time * 30) * 1.2 : 0;
+  drawCritter({ type:'raccoon', x:th.x - 19 + shake, y:th.b - 24, w:38, h:24, dir:th.dir, walkT:th.hop || th.got ? G.time : 0 });
+  ctx.restore();
+  if (th.got) return;
+  drawPie(th.x - th.dir * 3, th.b - 26 + (th.hop ? 0 : Math.sin(G.time * 6) * 1.5), .62);
+  if (!th.hop && th.x - cam.x < W + 40) bubble(last ? 'Eep!' : ['Mine!', 'Nyah nyah!', 'Yum yum!'][th.i % 3], th.x + 34, th.b - 64 + Math.sin(G.time * 4) * 3, '#6a2f7e');
+}
+function drawKiteAhead() {
+  const kx = Math.min(P.x + 460 + Math.sin(G.time * .7) * 40, L.w * T - 60), ky = 90 + Math.sin(G.time * 1.3) * 26 + cam.y * .4;
+  drawKiteShape(kx, ky, .8, kx - 50, ky + 110);
+}
 function drawGoal(g) {
+  if (L.goal === 'chase') { drawPicnic(g); return; }
   drawTent({ x:g.x + 70, bottom:g.bottom, color:g.tent });
   drawCampfire(g.x + 8, g.bottom);
   if (g.who) {
@@ -1469,6 +1735,7 @@ function drawPlayer() {
   const lean = p.onGround && Math.abs(p.vx) > 120 && !p.crouch ? .07 : 0;
   drawSprite(f, cx, b + 2, charW(G.hero, 66), p.face < 0, sx, sy, 1, lean);
   if (G.kite && G.state !== 'win') drawKiteShape(cx - p.face * 16, b - charW(G.hero, 66) * 1.2 * VIS[G.hero] - 18 + Math.sin(G.time * 5) * 2, .5);
+  if (G.pie && G.state !== 'win') drawPie(cx, b - charW(G.hero, 66) * 1.2 * VIS[G.hero] - 4 + Math.sin(G.time * 5) * 1.5, .6);
 }
 function drawParticles() {
   for (const p of parts) {
@@ -1524,10 +1791,14 @@ function drawWorld() {
   if (E.goal) drawGoal(E.goal);
   E.pages.forEach(pg => { if (!pg.got) drawPage(pg); });
   if (E.kite) drawKite(E.kite);
+  if (L.kiteAhead) drawKiteAhead();
+  E.tables.forEach(drawTable);
+  E.logs.forEach(drawLog);
   E.berries.forEach(b => { if (!b.got) drawBerry(b); });
   E.humans.forEach(drawCone);
   E.humans.forEach(drawHuman);
   E.critters.forEach(drawCritter);
+  if (E.thief) drawThief(E.thief);
   E.bees.forEach(drawBee);
   drawSibling();
   drawPlayer();
@@ -1548,7 +1819,7 @@ function drawWorld() {
 
 function drawHUD() {
   ctx.save();
-  const extra = L.goal === 'collect' ? 92 : (L.goal === 'fetch' && G.kite) ? 44 : 0;
+  const extra = L.goal === 'collect' ? 104 : ((L.goal === 'fetch' && G.kite) || G.pie) ? 44 : 0;
   ctx.fillStyle = 'rgba(0,0,0,.3)'; rr(12, 10, (G.hasSib ? 276 : 236) + extra, 42, 21); ctx.fill();
   for (let i = 0; i < 3; i++) heart(38 + i * 30, 19, 24, i < G.hearts ? '#ff5a6e' : 'rgba(255,255,255,.25)');
   drawBerry({ x:140, y:33, ph:0 });
@@ -1556,10 +1827,11 @@ function drawHUD() {
   ctx.fillText('× ' + G.berries, 156, 32);
   if (G.hasSib) drawSprite(G.follow + '_idle', 258, 50, charW(G.follow, 34, true));
   const ex = G.hasSib ? 290 : 250;
-  if (L.goal === 'collect') { drawPage({ x:ex + 6, y:31, ph:0 }); ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = '600 22px Fredoka, sans-serif'; ctx.fillText(`${G.pages}/${L.need}`, ex + 26, 32); }
+  if (L.goal === 'collect') { drawPage({ x:ex + 6, y:31, ph:0 }); ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = '600 22px Fredoka, sans-serif'; ctx.fillText(`${G.pages}/${G.pagesTotal}`, ex + 26, 32); }
   if (L.goal === 'fetch' && G.kite) drawKiteShape(ex + 10, 26, .45);
+  if (G.pie) drawPie(ex + 16, 38, .55);
   ctx.textAlign = 'right'; ctx.font = '600 18px Fredoka, sans-serif';
-  ctx.fillStyle = 'rgba(0,0,0,.3)'; const label = L.girl ? L.name : `${G.level + 1}. ${L.name}`; const tw = ctx.measureText(label).width;
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; const label = `${advStep()}/${G.adv.levels.length} ${L.name}`; const tw = ctx.measureText(label).width;
   rr(W - tw - 86, 12, tw + 28, 36, 18); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.fillText(label, W - 72, 31);
   ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(PAUSE_BTN.x, PAUSE_BTN.y, PAUSE_BTN.r, 0, 7); ctx.fill();
@@ -1586,7 +1858,9 @@ function panel(title, lines, foot, titleColor = '#3b2a1e') {
   const pw = 620, ph = 120 + lines.length * 32 + (foot ? 44 : 0), px = (W - pw) / 2, py = (H - ph) / 2;
   ctx.fillStyle = '#fffaf0'; rr(px, py, pw, ph, 26); ctx.fill();
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = titleColor; ctx.font = '700 42px Fredoka, sans-serif'; ctx.fillText(title, W / 2, py + 62);
+  ctx.fillStyle = titleColor; ctx.font = '700 42px Fredoka, sans-serif';
+  const ttw = ctx.measureText(title).width; if (ttw > pw - 50) ctx.font = `700 ${Math.floor(42 * (pw - 50) / ttw)}px Fredoka, sans-serif`;
+  ctx.fillText(title, W / 2, py + 62);
   ctx.fillStyle = '#5a4a3c'; ctx.font = '400 21px Fredoka, sans-serif';
   lines.forEach((l, i) => ctx.fillText(l, W / 2, py + 104 + i * 32));
   if (foot) { ctx.globalAlpha = .6 + .4 * Math.sin(G.time * 4); ctx.fillStyle = '#2f7a3a'; ctx.font = '600 21px Fredoka, sans-serif'; ctx.fillText(foot, W / 2, py + ph - 28); ctx.globalAlpha = 1; }
@@ -1605,7 +1879,7 @@ function idleFrame(id, seed) {
 }
 function drawTitle() {
   drawTitleBg();
-  [[110, 'C', 132, false, 2.1], [250, 'B', 132, false, 0], [375, 'A', 132, false, 1.3], [590, 'CL', 132, true, .7], [720, 'LE', 132, true, 2.6], [860, 'HA', 132, true, 1.9]].forEach(([x, id, w, flip, sd]) =>
+  [[92, 'C', 124, false, 2.1], [212, 'B', 124, false, 0], [318, 'A', 124, false, 1.3], [530, 'CL', 124, true, .7], [640, 'LE', 124, true, 2.6], [752, 'HA', 124, true, 1.9], [872, 'GK', 124, true, 3.3]].forEach(([x, id, w, flip, sd]) =>
     drawSprite(idleFrame(id, sd), x, 452, charW(id, w), flip, 1, 1 + Math.sin(G.time * 2.4 + sd) * .012));
   ctx.save(); ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(59,42,30,.25)'; ctx.font = '700 78px Fredoka, sans-serif'; ctx.fillText('Baby Squatch', W / 2 + 4, 104);
@@ -1630,7 +1904,7 @@ function drawSelect() {
   ctx.fillStyle = '#fffaf0'; ctx.fillText(heading, W / 2, 59);
   if (sub) { ctx.font = '400 20px Fredoka, sans-serif'; ctx.fillText(sub, W / 2, 104); }
   if (SEL.step === 'hero') {
-    [['squatch', 'Squatches', W / 2 - PILLS.w - 6], ['girl', 'Girls', W / 2 + 6]].forEach(([g, label, x]) => {
+    [['squatch', 'Squatches', W / 2 - PILLS.w - 6], ['girl', 'Family', W / 2 + 6]].forEach(([g, label, x]) => {
       const on = SEL.group === g;
       ctx.fillStyle = on ? '#ffb83f' : 'rgba(255,250,240,.55)'; rr(x, PILLS.y, PILLS.w, PILLS.h, 17); ctx.fill();
       ctx.fillStyle = on ? '#3b2a1e' : '#5a4a3c'; ctx.font = '600 18px Fredoka, sans-serif'; ctx.fillText(label, x + PILLS.w / 2, PILLS.y + 23);
@@ -1658,16 +1932,25 @@ function drawSelect() {
         drawSprite(sel ? idleFrame(a.girl, i) : a.girl + '_idle', x - 20, top + 202, charW(a.girl, 104), false);
         if (a.id === 'lena') for (let k = 0; k < 3; k++) drawPage({ x:x + 46 + (k - 1) * 14, y:top + 90 + k * 26, ph:k * 2 });
         if (a.id === 'hannah') drawKiteShape(x + 52, top + 70, .7);
-        if (a.id === 'clara') { drawCampfire(x + 58, top + 200); }
+        if (a.id === 'clara') { drawCampfire(x + 50, top + 200); }
+        if (a.id === 'kathy') { drawPie(x + 44, top + 96, .8); drawCritter({ type:'raccoon', x:x + 26, y:top + 176, w:38, h:24, dir:-1, walkT:0 }); }
       } else {
         const mama = girlHero ? G.sib : G.hero;
-        drawSprite(mama + '_big', x - 18, top + 202, charW(mama, 128, true), false);
-        drawSprite(G.hero + '_idle', x + 52, top + 202, charW(G.hero, 70), true);
+        drawSprite(mama + '_big', x - 20, top + 202, charW(mama, 124, true), false);
+        drawSprite(G.hero + '_idle', x + 44, top + 202, charW(G.hero, 66), true);
       }
       title = a.name; blurb = it.blocked ? 'That\'s you!' : a.blurb;
+      const prog = PROG[a.id] || 0;
+      ctx.fillStyle = prog ? '#2f7a3a' : '#9a8676'; ctx.font = '600 14px Fredoka, sans-serif';
+      ctx.fillText(prog ? `Continue: level ${prog + 1} of ${a.levels.length}` : `${a.levels.length} levels`, x, top + 26);
     }
-    ctx.fillStyle = '#3b2a1e'; ctx.font = `700 ${title.length > 14 ? 22 : 28}px Fredoka, sans-serif`; ctx.fillText(title, x, top + 238);
-    ctx.fillStyle = '#7a6656'; ctx.font = '400 16px Fredoka, sans-serif'; ctx.fillText(blurb, x, top + 264);
+    const fit = (t, size, weight, y, color) => {
+      ctx.font = `${weight} ${size}px Fredoka, sans-serif`; const mw = g.w - 18, tw = ctx.measureText(t).width;
+      if (tw > mw) ctx.font = `${weight} ${Math.floor(size * mw / tw)}px Fredoka, sans-serif`;
+      ctx.fillStyle = color; ctx.fillText(t, x, y);
+    };
+    fit(title, title.length > 14 ? 22 : 28, 700, top + 238, '#3b2a1e');
+    fit(blurb, 16, 400, top + 264, '#7a6656');
     ctx.globalAlpha = 1;
     if (it.blocked) {
       ctx.fillStyle = '#2f7a3a'; rr(x - 34, top - 14, 68, 28, 14); ctx.fill();
@@ -1676,8 +1959,8 @@ function drawSelect() {
   });
   ctx.fillStyle = 'rgba(255,250,240,.9)'; rr(W / 2 - 280, 470, 560, 48, 20); ctx.fill();
   ctx.globalAlpha = .6 + .4 * Math.sin(G.time * 4); ctx.fillStyle = '#2f7a3a'; ctx.font = '600 18px Fredoka, sans-serif';
-  const hint = isTouch ? (SEL.step === 'hero' ? 'Tap Squatches or Girls, then tap who you want to be' : 'Tap to choose')
-    : '← → choose   ' + (SEL.step === 'hero' ? '↓ squatches / girls   ' : '') + 'Space to pick   Esc back';
+  const hint = isTouch ? (SEL.step === 'hero' ? 'Tap Squatches or Family, then tap who you want to be' : 'Tap to choose')
+    : '← → choose   ' + (SEL.step === 'hero' ? '↓ squatches / family   ' : '') + 'Space to pick   Esc back';
   ctx.fillText(hint, W / 2, 500);
   ctx.globalAlpha = 1;
   if (isTouch) {
@@ -1695,7 +1978,7 @@ function render() {
   drawHUD();
   if (G.flash > 0) { ctx.fillStyle = `rgba(255,255,255,${G.flash})`; ctx.fillRect(0, 0, W, H); }
   switch (G.state) {
-    case 'intro': panel(L.girl ? L.name : `Level ${G.level + 1}: ${L.name}`, (isGirl(G.hero) && L.girlTips) || L.tips, pressText()); break;
+    case 'intro': panel(`Level ${advStep()}: ${L.name}`, (isGirl(G.hero) && L.girlTips) || L.tips, pressText()); break;
     case 'mishap': {
       ctx.save(); ctx.textAlign = 'center';
       const s = 1 + Math.max(0, G.timer - 1) * .4;
