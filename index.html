@@ -11,7 +11,9 @@
   #wrap { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
   canvas { display:block; border-radius:10px; box-shadow:0 10px 40px rgba(0,0,0,.45); }
   #touch { position:fixed; left:0; right:0; bottom:0; display:none; justify-content:space-between;
-           padding:16px 20px calc(16px + env(safe-area-inset-bottom)); pointer-events:none; }
+           /* kept away from the screen corners, where iPad grabs a drag to resize the window */
+           padding:0 calc(56px + env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom)) calc(56px + env(safe-area-inset-left));
+           pointer-events:none; }
   body.touch #touch { display:flex; }
   .pad { display:flex; gap:14px; pointer-events:auto; }
   .btn { width:70px; height:70px; border-radius:50%; background:rgba(255,255,255,.2); border:2px solid rgba(255,255,255,.5);
@@ -34,14 +36,27 @@ const W = 960, H = 540, T = 40, ROWS = 14, STEP = 1 / 120;
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 const shade = document.createElement('canvas');
 
+let fitW = 0, fitH = 0;
 function resize() {
+  // iPad windowed mode can fire resize before innerWidth/innerHeight update, so read the layout box directly.
+  const de = document.documentElement;
+  const vw = Math.max(1, de.clientWidth || innerWidth), vh = Math.max(1, de.clientHeight || innerHeight);
+  if (vw === fitW && vh === fitH) return;
+  fitW = vw; fitH = vh;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const s = Math.min(innerWidth / W, innerHeight / H);
-  cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px';
+  const s = Math.min(vw / W, vh / H);
+  cv.style.width = Math.floor(W * s) + 'px'; cv.style.height = Math.floor(H * s) + 'px';
   cv.width = Math.round(W * s * dpr); cv.height = Math.round(H * s * dpr);
   shade.width = cv.width; shade.height = cv.height;
+  scrollTo(0, 0);
 }
-addEventListener('resize', resize); resize();
+// Refit on every way the window can change size, then check again after the window settles.
+const refit = () => { resize(); requestAnimationFrame(resize); setTimeout(resize, 250); };
+addEventListener('resize', refit); addEventListener('orientationchange', refit);
+if (window.visualViewport) visualViewport.addEventListener('resize', refit);
+if (window.ResizeObserver) new ResizeObserver(refit).observe(document.documentElement);
+setInterval(resize, 1000);
+resize();
 if (document.fonts) ['400', '600', '700'].forEach(w => document.fonts.load(`${w} 20px Fredoka`));
 
 /* ---------------- helpers ---------------- */
