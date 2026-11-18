@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baby Squatch</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef4e6;
+    --card: #ffffff;
+    --ink: #3b2a1e;
+    --muted: #7a6a5c;
+    --line: #dfe6d4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Fredoka", system-ui, sans-serif;
+    padding: 32px 16px;
+  }
+  h1 { text-align: center; font-weight: 600; margin: 0 0 4px; font-size: 2rem; }
+  p.sub { text-align: center; color: var(--muted); margin: 0 0 28px; }
+  .grid {
+    display: grid; gap: 16px; max-width: 980px; margin: 0 auto;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
+    padding: 16px; text-align: center;
+  }
+  .card.hero { grid-column: 1 / -1; }
+  .card svg { width: 100%; height: auto; max-height: 260px; }
+  .card.hero svg { max-height: 420px; }
+  .label { color: var(--muted); font-size: .95rem; margin-top: 6px; }
+
+  /* ---------- animations ---------- */
+  .breathe { animation: breathe 2.4s ease-in-out infinite; transform-origin: 100px 190px; }
+  @keyframes breathe { 50% { transform: scale(1.02, .98); } }
+
+  .blink { animation: blink 4s infinite; transform-origin: center; transform-box: fill-box; }
+  @keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+
+  .wave { animation: wave 1.2s ease-in-out infinite; transform-origin: 136px 128px; }
+  @keyframes wave { 50% { transform: rotate(-35deg); } }
+
+  .tuft { animation: tuft 2.4s ease-in-out infinite; transform-origin: 100px 52px; }
+  @keyframes tuft { 50% { transform: rotate(6deg); } }
+
+  .walk { animation: bob .5s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-4px); } }
+  .legL { animation: legA .5s ease-in-out infinite; transform-origin: 86px 168px; }
+  .legR { animation: legB .5s ease-in-out infinite; transform-origin: 114px 168px; }
+  @keyframes legA { 0%,100% { transform: rotate(18deg); } 50% { transform: rotate(-18deg); } }
+  @keyframes legB { 0%,100% { transform: rotate(-18deg); } 50% { transform: rotate(18deg); } }
+  .armSwingL { animation: legB .5s ease-in-out infinite; transform-origin: 66px 128px; }
+  .armSwingR { animation: legA .5s ease-in-out infinite; transform-origin: 134px 128px; }
+
+  .jump { animation: jump 1.1s cubic-bezier(.3,.0,.4,1) infinite; }
+  @keyframes jump { 0%,100% { transform: translateY(0) scale(1.06,.94); } 40% { transform: translateY(-26px) scale(.95,1.05); } 70% { transform: translateY(-10px); } }
+
+  .hide-shake { animation: shake .35s ease-in-out infinite; transform-origin: 100px 200px; }
+  @keyframes shake { 25% { transform: rotate(-2deg); } 75% { transform: rotate(2deg); } }
+</style>
+</head>
+<body>
+<h1>Baby Squatch</h1>
+<p class="sub">Character sheet: hero pose, walk, jump, and scared.</p>
+
+<!-- Reusable parts -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <radialGradient id="fur" cx="45%" cy="35%" r="75%">
+      <stop offset="0" stop-color="#a5714a"/>
+      <stop offset="1" stop-color="#6e4428"/>
+    </radialGradient>
+    <radialGradient id="face" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#f6dcc0"/>
+      <stop offset="1" stop-color="#e5bf9a"/>
+    </radialGradient>
+    <radialGradient id="eye" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#5a3a22"/>
+      <stop offset="1" stop-color="#1e120a"/>
+    </radialGradient>
+
+    <!-- shaggy body -->
+    <g id="body">
+      <path d="M62 120 Q58 92 100 90 Q142 92 138 120 L142 160 Q144 182 120 186 L80 186 Q56 182 58 160 Z" fill="url(#fur)"/>
+      <!-- fur fringe along bottom -->
+      <path d="M60 172 l6 12 6-10 6 12 6-10 6 12 6-10 6 12 6-10 6 12 6-10 6 12 6-12" fill="#6e4428"/>
+      <!-- belly -->
+      <ellipse cx="100" cy="148" rx="24" ry="26" fill="url(#face)" opacity=".9"/>
+    </g>
+
+    <!-- big round head -->
+    <g id="head">
+      <!-- shaggy side fur (hides ears) -->
+      <path d="M50 70 l-12 6 10 4 -10 8 12 2 -8 10 14 -2 z" fill="#6e4428"/>
+      <path d="M150 70 l12 6 -10 4 10 8 -12 2 8 10 -14 -2 z" fill="#6e4428"/>
+      <!-- fuzzy head with a peaked squatch crown -->
+      <path d="M100 14
+        q8 6 12 14 q14 -2 20 10 q12 2 12 14 q10 6 6 18 q6 12 -4 20 q2 14 -12 18 q-6 12 -20 8
+        q-8 8 -14 6 q-8 4 -14 -2 q-14 4 -20 -8 q-14 -4 -12 -18 q-10 -8 -4 -20 q-4 -12 6 -18
+        q0 -12 12 -14 q6 -12 20 -10 q4 -8 12 -14 z" fill="url(#fur)"/>
+      <!-- crown tuft strands -->
+      <path d="M100 14 q-4 10 -2 18 M100 14 q6 8 6 18" stroke="#5c3820" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- face patch -->
+      <path d="M100 52 Q134 52 138 84 Q140 116 100 118 Q60 116 62 84 Q66 52 100 52 Z" fill="url(#face)"/>
+      <!-- brow fluff -->
+      <path d="M70 60 q8 -6 14 0 q8 -6 16 0 q8 -6 16 0 q6 -6 14 0 l-2 6 q-28 -8 -56 0 z" fill="#7d4f30"/>
+      <!-- cheeks -->
+      <ellipse cx="72" cy="98" rx="9" ry="6" fill="#f29a8a" opacity=".55"/>
+      <ellipse cx="128" cy="98" rx="9" ry="6" fill="#f29a8a" opacity=".55"/>
+      <!-- nose -->
+      <path d="M94 92 q6 -4 12 0 q-2 6 -6 6 q-4 0 -6 -6 z" fill="#5b3a26"/>
+    </g>
+
+    <!-- open happy eyes -->
+    <g id="eyes">
+      <g class="blink">
+        <ellipse cx="82" cy="80" rx="11" ry="13" fill="url(#eye)"/>
+        <circle cx="78" cy="75" r="4.5" fill="#fff"/>
+        <circle cx="86" cy="85" r="2" fill="#fff" opacity=".8"/>
+      </g>
+      <g class="blink">
+        <ellipse cx="118" cy="80" rx="11" ry="13" fill="url(#eye)"/>
+        <circle cx="114" cy="75" r="4.5" fill="#fff"/>
+        <circle cx="122" cy="85" r="2" fill="#fff" opacity=".8"/>
+      </g>
+    </g>
+
+    <g id="smile">
+      <path d="M92 102 q8 8 16 0" stroke="#5b3a26" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- leaf sprout on head -->
+    <g id="leaf" class="tuft">
+      <path d="M100 30 q-2 -10 2 -18" stroke="#4f7a32" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M102 14 q12 -10 22 -2 q-10 10 -22 2 z" fill="#7cb342"/>
+      <path d="M102 14 q12 -4 20 -2" stroke="#4f7a32" stroke-width="1.5" fill="none"/>
+    </g>
+
+    <!-- long dangly squatch arms with paws -->
+    <g id="armL">
+      <path d="M68 110 q-20 12 -18 52 q0 8 6 8 q8 0 8 -10 l6 -40 z" fill="#7d4f30"/>
+      <path d="M52 158 l-4 8 6 -2 0 8 5 -6 4 6 1 -10 z" fill="#7d4f30"/>
+      <ellipse cx="57" cy="164" rx="5" ry="4" fill="#e5bf9a"/>
+    </g>
+    <g id="armR">
+      <path d="M132 110 q20 12 18 52 q0 8 -6 8 q-8 0 -8 -10 l-6 -40 z" fill="#7d4f30"/>
+      <path d="M148 158 l4 8 -6 -2 0 8 -5 -6 -4 6 -1 -10 z" fill="#7d4f30"/>
+      <ellipse cx="143" cy="164" rx="5" ry="4" fill="#e5bf9a"/>
+    </g>
+
+    <!-- big squatch feet with toes -->
+    <g id="footL">
+      <ellipse cx="80" cy="190" rx="22" ry="9" fill="#6e4428"/>
+      <ellipse cx="78" cy="192" rx="15" ry="5" fill="#e5bf9a"/>
+      <circle cx="62" cy="188" r="3.5" fill="#e5bf9a"/><circle cx="66" cy="184" r="3" fill="#e5bf9a"/><circle cx="71" cy="182" r="2.6" fill="#e5bf9a"/>
+    </g>
+    <g id="footR">
+      <ellipse cx="120" cy="190" rx="22" ry="9" fill="#6e4428"/>
+      <ellipse cx="122" cy="192" rx="15" ry="5" fill="#e5bf9a"/>
+      <circle cx="138" cy="188" r="3.5" fill="#e5bf9a"/><circle cx="134" cy="184" r="3" fill="#e5bf9a"/><circle cx="129" cy="182" r="2.6" fill="#e5bf9a"/>
+    </g>
+
+    <ellipse id="shadow" cx="100" cy="198" rx="44" ry="6" fill="#000" opacity=".12"/>
+  </defs>
+</svg>
+
+<div class="grid">
+  <!-- HERO: idle + wave -->
+  <div class="card hero">
+    <svg viewBox="0 0 200 205" role="img" aria-label="Baby squatch waving">
+      <use href="#shadow"/>
+      <g class="breathe">
+        <use href="#footL"/><use href="#footR"/>
+        <use href="#armL"/>
+        <use href="#body"/>
+        <g class="wave"><use href="#armR"/></g>
+        <use href="#head"/>
+        <use href="#eyes"/>
+        <use href="#smile"/>
+        <use href="#leaf"/>
+      </g>
+    </svg>
+    <div class="label">Idle: breathing, blinking, waving</div>
+  </div>
+
+  <!-- WALK -->
+  <div class="card">
+    <svg viewBox="0 0 200 205" role="img" aria-label="Baby squatch walking">
+      <use href="#shadow"/>
+      <g class="walk">
+        <g class="legL"><use href="#footL"/></g>
+        <g class="legR"><use href="#footR"/></g>
+        <g class="armSwingL"><use href="#armL"/></g>
+        <use href="#body"/>
+        <g class="armSwingR"><use href="#armR"/></g>
+        <use href="#head"/>
+        <use href="#eyes"/>
+        <use href="#smile"/>
+        <use href="#leaf"/>
+      </g>
+    </svg>
+    <div class="label">Walk</div>
+  </div>
+
+  <!-- JUMP -->
+  <div class="card">
+    <svg viewBox="0 -30 200 235" role="img" aria-label="Baby squatch jumping">
+      <use href="#shadow"/>
+      <g class="jump">
+        <use href="#footL"/><use href="#footR"/>
+        <g transform="rotate(140 68 112)"><use href="#armL"/></g>
+        <g transform="rotate(-140 132 112)"><use href="#armR"/></g>
+        <use href="#body"/>
+        <use href="#head"/>
+        <use href="#eyes"/>
+        <path d="M92 100 q8 12 16 0 z" fill="#5b3a26"/>
+        <use href="#leaf"/>
+      </g>
+    </svg>
+    <div class="label">Jump</div>
+  </div>
+
+  <!-- SCARED / SPOTTED -->
+  <div class="card">
+    <svg viewBox="0 0 200 205" role="img" aria-label="Baby squatch scared">
+      <use href="#shadow"/>
+      <g class="hide-shake">
+        <use href="#footL"/><use href="#footR"/>
+        <use href="#body"/>
+        <use href="#head"/>
+        <!-- squeezed-shut eyes -->
+        <path d="M72 80 l10 -4 l-10 -4 M128 80 l-10 -4 l10 -4" stroke="#1e120a" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 4)"/>
+        <ellipse cx="100" cy="106" rx="5" ry="6" fill="#5b3a26"/>
+        <!-- paws over mouth area -->
+        <g transform="rotate(-70 66 116) translate(6 -6)"><use href="#armL"/></g>
+        <g transform="rotate(70 134 116) translate(-6 -6)"><use href="#armR"/></g>
+        <!-- sweat drop -->
+        <path d="M146 54 q6 10 0 14 q-6 -4 0 -14 z" fill="#8fd3ff"/>
+        <use href="#leaf"/>
+      </g>
+    </svg>
+    <div class="label">Spotted! (caught by a ranger)</div>
+  </div>
+</div>
+</body>
+</html>

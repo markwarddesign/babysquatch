@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squatch Directions</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#eef4e6; --card:#fff; --ink:#3b2a1e; --muted:#7a6a5c; --line:#dfe6d4; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Fredoka",system-ui,sans-serif; padding:32px 16px; }
+  h1 { text-align:center; font-weight:600; margin:0 0 4px; }
+  p.sub { text-align:center; color:var(--muted); margin:0 0 24px; }
+  .grid { display:grid; gap:16px; max-width:980px; margin:0 auto; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:20px; }
+  .card h2 { margin:0; font-size:1.3rem; font-weight:600; }
+  .card p { margin:4px 0 0; color:var(--muted); font-size:.95rem; }
+  .card svg { width:100%; height:auto; max-height:420px; display:block; margin:8px auto; }
+  .swatches { display:flex; gap:8px; margin-top:10px; }
+  .swatches span { width:28px; height:28px; border-radius:50%; border:1px solid rgba(0,0,0,.1); }
+
+  .breathe { animation:breathe 2.6s ease-in-out infinite; transform-origin:100px 225px; }
+  @keyframes breathe { 50% { transform:scale(1.015,.985); } }
+  .blink { animation:blink 4.2s infinite; transform-box:fill-box; transform-origin:center; }
+  @keyframes blink { 0%,93%,100% { transform:scaleY(1); } 96% { transform:scaleY(.08); } }
+  .sway { animation:sway 3s ease-in-out infinite; transform-origin:76px 122px; }
+  @keyframes sway { 50% { transform:rotate(-8deg); } }
+  .swayR { animation:swayR 3.4s ease-in-out infinite; transform-origin:124px 122px; }
+  @keyframes swayR { 50% { transform:rotate(6deg); } }
+  .tilt { animation:tilt 4s ease-in-out infinite; transform-origin:100px 110px; }
+  @keyframes tilt { 50% { transform:rotate(-3deg); } }
+</style>
+</head>
+<body>
+<h1>Baby Squatch: two directions</h1>
+<p class="sub">Original characters inspired by your two references</p>
+
+<div class="grid">
+
+  <!-- ============ A: RUGGED FIGURE ============ -->
+  <div class="card">
+    <h2>A · Rugged little rascal</h2>
+    <p>Chestnut fur, wild spiky hair, big feet, toothy grin</p>
+    <svg viewBox="0 0 200 240" role="img" aria-label="Rugged baby squatch">
+      <ellipse cx="100" cy="228" rx="62" ry="7" fill="#000" opacity=".12"/>
+      <g class="breathe">
+        <!-- legs -->
+        <path d="M74 168 L70 206 L93 206 L95 170 Z" fill="#74391d"/>
+        <path d="M126 168 L130 206 L107 206 L105 170 Z" fill="#74391d"/>
+        <!-- feet -->
+        <g fill="#e3c9a0">
+          <ellipse cx="80" cy="212" rx="22" ry="10"/>
+          <ellipse cx="59" cy="219" rx="5" ry="8"/><ellipse cx="68" cy="221" rx="5" ry="8"/>
+          <ellipse cx="78" cy="222" rx="5.5" ry="8"/><ellipse cx="89" cy="221" rx="5.5" ry="8"/>
+          <ellipse cx="120" cy="212" rx="22" ry="10"/>
+          <ellipse cx="141" cy="219" rx="5" ry="8"/><ellipse cx="132" cy="221" rx="5" ry="8"/>
+          <ellipse cx="122" cy="222" rx="5.5" ry="8"/><ellipse cx="111" cy="221" rx="5.5" ry="8"/>
+        </g>
+        <g fill="#7a3f22">
+          <ellipse cx="59" cy="225" rx="3" ry="2"/><ellipse cx="68" cy="227" rx="3" ry="2"/>
+          <ellipse cx="78" cy="228" rx="3.4" ry="2"/><ellipse cx="89" cy="227" rx="3.4" ry="2"/>
+          <ellipse cx="141" cy="225" rx="3" ry="2"/><ellipse cx="132" cy="227" rx="3" ry="2"/>
+          <ellipse cx="122" cy="228" rx="3.4" ry="2"/><ellipse cx="111" cy="227" rx="3.4" ry="2"/>
+        </g>
+        <!-- ankle tufts -->
+        <path d="M64 206 Q66 198 71 198 Q73 203 75 203 Q77 196 81 196 Q83 202 85 202 Q87 197 91 197 Q95 200 96 206 Z" fill="#6a3519" stroke="#6a3519" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M136 206 Q134 198 129 198 Q127 203 125 203 Q123 196 119 196 Q117 202 115 202 Q113 197 109 197 Q105 200 104 206 Z" fill="#6a3519" stroke="#6a3519" stroke-width="3" stroke-linejoin="round"/>
+
+        <!-- torso + belly -->
+        <path d="M66 120 Q64 100 100 98 Q136 100 134 120 L132 168 Q130 182 100 182 Q70 182 68 168 Z" fill="#7a3f22"/>
+        <ellipse cx="100" cy="152" rx="22" ry="24" fill="#e3c9a0"/>
+
+        <!-- arms (long, hanging) -->
+        <g class="sway">
+          <path d="M70 110 Q48 116 45 150 L44 176 Q46 184 56 182 L62 150 L76 128 Z" fill="#7a3f22"/>
+          <path d="M47 130 Q40 133 42 138 Q36 144 42 150 Q38 158 47 160 Z" fill="#7a3f22" stroke="#7a3f22" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="52" cy="186" rx="8" ry="11" fill="#e3c9a0"/>
+          <ellipse cx="47" cy="195" rx="2.4" ry="1.6" fill="#7a3f22"/>
+          <ellipse cx="53" cy="197" rx="2.4" ry="1.6" fill="#7a3f22"/>
+        </g>
+        <g class="swayR">
+          <path d="M130 110 Q152 116 155 150 L156 176 Q154 184 144 182 L138 150 L124 128 Z" fill="#7a3f22"/>
+          <path d="M153 130 Q160 133 158 138 Q164 144 158 150 Q162 158 153 160 Z" fill="#7a3f22" stroke="#7a3f22" stroke-width="3" stroke-linejoin="round"/>
+          <ellipse cx="148" cy="186" rx="8" ry="11" fill="#e3c9a0"/>
+          <ellipse cx="153" cy="195" rx="2.4" ry="1.6" fill="#7a3f22"/>
+          <ellipse cx="147" cy="197" rx="2.4" ry="1.6" fill="#7a3f22"/>
+        </g>
+
+        <g class="tilt">
+          <!-- beard / chest mane -->
+          <!-- beard: rounded scallops -->
+          <path d="M56 90 Q58 112 64 118 Q68 112 70 110 Q72 126 77 128 Q81 118 83 114 Q85 132 91 134 Q95 122 97 120 Q99 136 103 136 Q106 122 104 120 Q107 132 111 134 Q115 128 117 114 Q119 118 123 128 Q128 126 130 110 Q132 112 136 118 Q142 112 144 90 Z" fill="#7a3f22" stroke="#7a3f22" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M77 112 Q78 120 80 124 M91 116 Q91 124 93 130 M109 116 Q109 124 107 130 M123 112 Q122 120 120 124" stroke="#5a2c14" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <!-- head: soft side tufts -->
+          <path d="M56 48 Q42 52 44 60 Q36 66 44 74 Q36 82 44 88 Q44 96 60 94 Z" fill="#6a3519" stroke="#6a3519" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M144 48 Q158 52 156 60 Q164 66 156 74 Q164 82 156 88 Q156 96 140 94 Z" fill="#6a3519" stroke="#6a3519" stroke-width="4" stroke-linejoin="round"/>
+          <ellipse cx="100" cy="72" rx="48" ry="42" fill="#7a3f22"/>
+          <!-- swoopy hair locks, rounded tips -->
+          <path d="M58 56 Q56 36 64 28 Q72 34 76 42 Q76 22 84 14 Q92 22 95 32 Q98 14 104 8 Q112 18 110 32 Q116 18 124 16 Q128 28 124 40 Q132 30 140 30 Q146 44 142 58 Z" fill="#7a3f22" stroke="#7a3f22" stroke-width="7" stroke-linejoin="round"/>
+          <path d="M84 20 Q86 30 88 38 M104 14 Q104 24 102 34 M123 22 Q120 30 118 38 M66 34 Q69 40 72 46" stroke="#5a2c14" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+          <!-- face -->
+          <ellipse cx="82" cy="72" rx="16" ry="14" fill="#dcbf94"/>
+          <ellipse cx="118" cy="72" rx="16" ry="14" fill="#dcbf94"/>
+          <ellipse cx="100" cy="92" rx="33" ry="18" fill="#dcbf94"/>
+          <!-- eyes -->
+          <g class="blink">
+            <ellipse cx="83" cy="73" rx="11" ry="10" fill="#fff"/>
+            <circle cx="85" cy="74" r="7" fill="#7a4220"/><circle cx="85" cy="74" r="3.6" fill="#1f0f06"/>
+            <circle cx="82.5" cy="71" r="2.2" fill="#fff"/>
+          </g>
+          <g class="blink">
+            <ellipse cx="117" cy="73" rx="11" ry="10" fill="#fff"/>
+            <circle cx="115" cy="74" r="7" fill="#7a4220"/><circle cx="115" cy="74" r="3.6" fill="#1f0f06"/>
+            <circle cx="112.5" cy="71" r="2.2" fill="#fff"/>
+          </g>
+          <!-- heavy brow -->
+          <path d="M62 64 Q80 50 98 60 L100 64 L102 60 Q120 50 138 64 L136 69 Q118 58 102 67 L98 67 Q82 58 64 69 Z" fill="#6a3519" stroke="#6a3519" stroke-width="3" stroke-linejoin="round"/>
+          <!-- nose -->
+          <path d="M91 82 Q100 76 109 82 Q107 90 100 90 Q93 90 91 82 Z" fill="#4a2412"/>
+          <ellipse cx="97" cy="81" rx="2.4" ry="1.3" fill="#fff" opacity=".35"/>
+          <!-- grin + fangs -->
+          <path d="M78 95 Q100 106 122 95" stroke="#4a2412" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M85.5 99 Q86 93 88 92.5 Q90 93 90.5 100 Z" fill="#fff"/>
+          <path d="M114.5 99 Q114 93 112 92.5 Q110 93 109.5 100 Z" fill="#fff"/>
+          <!-- rosy cheeks for extra softness -->
+          <ellipse cx="72" cy="90" rx="7" ry="4.5" fill="#e58a74" opacity=".35"/>
+          <ellipse cx="128" cy="90" rx="7" ry="4.5" fill="#e58a74" opacity=".35"/>
+        </g>
+      </g>
+    </svg>
+    <div class="swatches">
+      <span style="background:#7a3f22"></span><span style="background:#6a3519"></span>
+      <span style="background:#dcbf94"></span><span style="background:#e3c9a0"></span>
+    </div>
+  </div>
+
+  <!-- ============ B: PLUSH BUDDY ============ -->
+  <div class="card">
+    <h2>B · Cuddly plush buddy</h2>
+    <p>Golden shaggy fur, soft long face, bead eyes, floppy arms</p>
+    <svg viewBox="0 0 200 240" role="img" aria-label="Plush baby squatch">
+      <defs>
+        <filter id="shag" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" result="n"/>
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <radialGradient id="gold" cx="45%" cy="35%" r="75%">
+          <stop offset="0" stop-color="#dc9a3c"/><stop offset="1" stop-color="#b0701f"/>
+        </radialGradient>
+        <radialGradient id="tan" cx="50%" cy="40%" r="70%">
+          <stop offset="0" stop-color="#e6c49b"/><stop offset="1" stop-color="#cfa679"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="100" cy="230" rx="50" ry="6" fill="#000" opacity=".12"/>
+      <g class="breathe">
+        <!-- legs -->
+        <g filter="url(#shag)">
+          <ellipse cx="82" cy="196" rx="17" ry="28" fill="url(#gold)"/>
+          <ellipse cx="118" cy="196" rx="17" ry="28" fill="url(#gold)"/>
+        </g>
+        <ellipse cx="82" cy="222" rx="13" ry="7" fill="url(#tan)"/>
+        <ellipse cx="118" cy="222" rx="13" ry="7" fill="url(#tan)"/>
+        <path d="M82 216 L82 228 M118 216 L118 228" stroke="#a7825a" stroke-width="1.2"/>
+
+        <!-- arms out -->
+        <g class="sway">
+          <path d="M78 122 L36 148" stroke="url(#gold)" stroke-width="22" stroke-linecap="round" filter="url(#shag)"/>
+          <ellipse cx="32" cy="151" rx="11" ry="8" fill="url(#tan)" transform="rotate(-30 32 151)"/>
+        </g>
+        <g class="swayR">
+          <path d="M122 122 L160 162" stroke="url(#gold)" stroke-width="22" stroke-linecap="round" filter="url(#shag)"/>
+          <ellipse cx="164" cy="166" rx="11" ry="8" fill="url(#tan)" transform="rotate(45 164 166)"/>
+        </g>
+
+        <!-- body -->
+        <ellipse cx="100" cy="152" rx="32" ry="40" fill="url(#gold)" filter="url(#shag)"/>
+        <!-- stitched chest -->
+        <path d="M80 118 Q100 112 120 118 L118 150 Q100 158 82 150 Z" fill="url(#tan)"/>
+        <g stroke="#9a7650" stroke-width="1.3" fill="none" stroke-linecap="round">
+          <path d="M100 120 L100 140"/>
+          <path d="M84 132 Q92 138 100 134 Q108 138 116 132"/>
+          <path d="M87 148 Q100 152 113 148"/>
+        </g>
+
+        <g class="tilt">
+          <!-- head fur -->
+          <circle cx="56" cy="82" r="9" fill="#cfa679"/>
+          <circle cx="144" cy="82" r="9" fill="#cfa679"/>
+          <ellipse cx="100" cy="78" rx="46" ry="46" fill="url(#gold)" filter="url(#shag)"/>
+          <!-- long soft face -->
+          <ellipse cx="100" cy="84" rx="27" ry="33" fill="url(#tan)"/>
+          <ellipse cx="100" cy="100" rx="19" ry="14" fill="#e9cfaa"/>
+          <!-- brow wrinkles -->
+          <path d="M86 62 Q100 57 114 62 M88 67 Q100 63 112 67" stroke="#9a7650" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+          <!-- bead eyes -->
+          <g class="blink"><circle cx="89" cy="80" r="5.8" fill="#14100c"/><circle cx="87.4" cy="78.2" r="1.8" fill="#fff"/></g>
+          <g class="blink"><circle cx="111" cy="80" r="5.8" fill="#14100c"/><circle cx="109.4" cy="78.2" r="1.8" fill="#fff"/></g>
+          <!-- nostrils + smile -->
+          <ellipse cx="96" cy="95" rx="1.8" ry="1.3" fill="#7a5a3a"/>
+          <ellipse cx="104" cy="95" rx="1.8" ry="1.3" fill="#7a5a3a"/>
+          <path d="M89 104 Q100 111 111 104" stroke="#6e4f30" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- forehead fringe -->
+          <path d="M72 52 Q86 40 100 44 Q114 40 128 52 Q116 50 108 54 Q100 48 92 54 Q84 50 72 52 Z" fill="url(#gold)" filter="url(#shag)"/>
+        </g>
+      </g>
+    </svg>
+    <div class="swatches">
+      <span style="background:#dc9a3c"></span><span style="background:#b0701f"></span>
+      <span style="background:#e6c49b"></span><span style="background:#cfa679"></span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
