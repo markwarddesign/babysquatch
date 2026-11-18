@@ -95,6 +95,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyR' && (G.state === 'paused' || G.state === 'gameover')) restartLevel();
   if (e.code === 'KeyQ' && (G.state === 'paused' || G.state === 'gameover' || G.state === 'intro')) quitToMenu();
   if (e.code === 'KeyM') muted = !muted;
+  if (e.code === 'KeyG' && (G.state === 'paused' || G.state === 'title')) goClubhouse();
 });
 addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) keys[k] = false; });
 cv.addEventListener('pointerdown', e => {
@@ -935,7 +936,11 @@ function quitToMenu() {
   jumpPressed = anyPressed = false; tapPos = null; keys.left = keys.right = keys.down = keys.jump = false;
 }
 const PAUSE_BTN = { x:W - 34, y:31, r:18 };
-const MENU_BTNS = [['Resume', 'P'], ['Restart level', 'R'], ['Quit to menu', 'Q']].map(([label, key], i) => ({ label, key, x:W / 2 - 150, y:206 + i * 62, w:300, h:48 }));
+// the Game Clubhouse hub page that links to all the games
+const CLUBHOUSE_URL = 'https://markwarddesign.github.io/';
+const CLUB_BTN = { x:16, y:14, w:206, h:40 };
+function goClubhouse() { location.href = CLUBHOUSE_URL; }
+const MENU_BTNS = [['Resume', 'P'], ['Restart level', 'R'], ['Quit to menu', 'Q'], ['Game Clubhouse', 'G']].map(([label, key], i) => ({ label, key, x:W / 2 - 150, y:206 + i * 62, w:300, h:48 }));
 function togglePause() {
   if (G.state === 'play') G.state = 'paused';
   else if (G.state === 'paused') G.state = 'play';
@@ -1270,6 +1275,7 @@ function update(dt) {
   G.flash = Math.max(0, G.flash - dt * 1.6);
   switch (G.state) {
     case 'title':
+      if (tapPos && tapPos.x > CLUB_BTN.x && tapPos.x < CLUB_BTN.x + CLUB_BTN.w && tapPos.y > CLUB_BTN.y && tapPos.y < CLUB_BTN.y + CLUB_BTN.h) { goClubhouse(); tapPos = null; anyPressed = false; break; }
       if (consumePress()) { G.state = 'select'; SEL.group = isGirl(G.hero) ? 'girl' : 'squatch'; goStep('hero'); sfx.hide(); }
       navPressed = 0; tapPos = null;
       break;
@@ -1293,7 +1299,7 @@ function update(dt) {
       if (tapPos) {
         const b = MENU_BTNS.find(b => tapPos.x > b.x && tapPos.x < b.x + b.w && tapPos.y > b.y && tapPos.y < b.y + b.h);
         tapPos = null; anyPressed = false;
-        if (b && b.key === 'P') togglePause(); else if (b && b.key === 'R') restartLevel(); else if (b && b.key === 'Q') quitToMenu();
+        if (b && b.key === 'P') togglePause(); else if (b && b.key === 'R') restartLevel(); else if (b && b.key === 'Q') quitToMenu(); else if (b && b.key === 'G') goClubhouse();
       }
       break;
   }
@@ -1881,7 +1887,12 @@ function drawTitle() {
   drawTitleBg();
   [[92, 'C', 124, false, 2.1], [212, 'B', 124, false, 0], [318, 'A', 124, false, 1.3], [530, 'CL', 124, true, .7], [640, 'LE', 124, true, 2.6], [752, 'HA', 124, true, 1.9], [872, 'GK', 124, true, 3.3]].forEach(([x, id, w, flip, sd]) =>
     drawSprite(idleFrame(id, sd), x, 452, charW(id, w), flip, 1, 1 + Math.sin(G.time * 2.4 + sd) * .012));
-  ctx.save(); ctx.textAlign = 'center';
+  ctx.save();
+  const cb = CLUB_BTN;
+  ctx.fillStyle = 'rgba(255,250,240,.9)'; rr(cb.x, cb.y, cb.w, cb.h, 20); ctx.fill();
+  ctx.fillStyle = '#3b2a1e'; ctx.font = '600 18px Fredoka, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('‹ Game Clubhouse', cb.x + cb.w / 2, cb.y + cb.h / 2 + 1); ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(59,42,30,.25)'; ctx.font = '700 78px Fredoka, sans-serif'; ctx.fillText('Baby Squatch', W / 2 + 4, 104);
   ctx.fillStyle = '#3b2a1e'; ctx.fillText('Baby Squatch', W / 2, 100);
   ctx.fillStyle = '#2f5a3a'; ctx.font = '600 28px Fredoka, sans-serif'; ctx.fillText('The Long Way Home', W / 2, 140);
@@ -1992,10 +2003,10 @@ function render() {
     case 'paused': {
       ctx.save();
       ctx.fillStyle = 'rgba(10,20,15,.5)'; ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#fffaf0'; rr(W / 2 - 200, 110, 400, 296, 26); ctx.fill();
+      ctx.fillStyle = '#fffaf0'; rr(W / 2 - 200, 110, 400, 358, 26); ctx.fill();
       ctx.textAlign = 'center'; ctx.fillStyle = '#3b2a1e'; ctx.font = '700 40px Fredoka, sans-serif'; ctx.fillText('Paused', W / 2, 168);
       MENU_BTNS.forEach((b, i) => {
-        ctx.fillStyle = i === 0 ? '#2f7a3a' : i === 1 ? '#e9a23b' : '#c0583f'; rr(b.x, b.y, b.w, b.h, 24); ctx.fill();
+        ctx.fillStyle = ['#2f7a3a', '#e9a23b', '#c0583f', '#3b82c4'][i]; rr(b.x, b.y, b.w, b.h, 24); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.font = '600 21px Fredoka, sans-serif'; ctx.fillText(b.label, W / 2, b.y + 31);
         if (!isTouch) { ctx.font = '600 14px Fredoka, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(b.key, b.x + b.w - 22, b.y + 30); }
       });
