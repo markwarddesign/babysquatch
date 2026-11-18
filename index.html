@@ -346,6 +346,11 @@ const GIRL_STYLES = {
         eye:'#6b4a2b', accent:'#ff7a5c', freckles:true },
   GK: { hair:'short', headR:35, legLen:54, torsoLen:56, torsoW:48, top:'#e2574c', topDk:'#bf4038', legs:'#56658a', shoe:'#f4f4f4',
         eye:'#4f7fbf', accent:'#ff7a5c', glasses:true, frame:'#b0336a', cardigan:true, hairCol:'#ddd3b4', hairDk:'#aa9f80', hairHi:'#f7f3e6' },
+  // the grown-ups: tall, blonde
+  DA: { hair:'dad', headR:35, legLen:66, torsoLen:62, torsoW:56, top:'#3b6fb0', topDk:'#264e85', legs:'#b49a6a', shoe:'#6b4a2b',
+        eye:'#4f7fbf', accent:'#8fb3e0', plaid:true, brows:true, jaw:true, grin:true, belt:'#5a3d22', armW:13 },
+  MO: { hair:'mom', headR:33, legLen:66, torsoLen:58, torsoW:46, top:'#3f8f74', topDk:'#2f705a', sleeve:'#f6efe2', legs:'#3b3f55', shoe:'#e87a5a',
+        eye:'#4f9a62', accent:'#e87a5a', vest:true, lashes:true },
 };
 function svgGirl(id, o = {}) {
   const { lx=0, ly=0, rx=0, ry=0, al=0, ar=0, eyes='open', mouth='smile', turn=0 } = o;
@@ -361,7 +366,7 @@ function svgGirl(id, o = {}) {
     const x = 100 + side * (tw - 3), y = sh + 7, len = c.torsoLen * .82;
     const sleeve = c.dress ? `<circle cx="${x}" cy="${y}" r="8" fill="${c.top}"/>` : '';
     return `<g transform="rotate(${rot} ${x} ${y})">
-      <path d="M${x} ${y} L${x + side * 7} ${y + len}" stroke="${c.dress ? skin : c.top}" stroke-width="12" stroke-linecap="round"/>
+      <path d="M${x} ${y} L${x + side * 7} ${y + len}" stroke="${c.dress ? skin : (c.sleeve || c.top)}" stroke-width="${c.armW || 12}" stroke-linecap="round"/>
       ${sleeve}<circle cx="${x + side * 7}" cy="${y + len + 2}" r="6.5" fill="${skin}"/></g>`;
   };
   // hair pieces
@@ -381,10 +386,22 @@ function svgGirl(id, o = {}) {
       <path d="M${100 + s * R * 1.08} ${hy - R * .2} q${s * 5} 8 0 16" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>`).join('');
     front = [-.55, 0, .55].map(k => `<path d="M${100 + k * R - 6} ${hy - R * 1.02} q6 -8 12 0" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>`).join('');
   }
+  if (c.hair === 'mom') {     // long, wavy, side-parted, past the shoulders
+    back = `<path d="M${100 - R - 6} ${hy - 6} Q${100 - R - 15} ${sh + 18} ${100 - R - 6} ${sh + 52} Q${100 - R + 2} ${sh + 64} ${100 - R + 12} ${sh + 54}
+      L${100 + R - 12} ${sh + 54} Q${100 + R - 2} ${sh + 64} ${100 + R + 6} ${sh + 52} Q${100 + R + 15} ${sh + 18} ${100 + R + 6} ${hy - 6} Z" fill="${hair}"/>`;
+    front = [-1, 1].map(s => `<path d="M${100 + s * (R - 2)} ${hy - R * .45} Q${100 + s * (R + 8)} ${hy + R * .4} ${100 + s * (R + 2)} ${sh + 8}
+        Q${100 + s * (R - 3)} ${sh + 26} ${100 + s * (R + 1)} ${sh + 40} Q${100 + s * (R - 9)} ${sh + 32} ${100 + s * (R - 10)} ${sh + 14}
+        Q${100 + s * (R - 6)} ${hy + R * .5} ${100 + s * (R * .74)} ${hy - R * .2} Z" fill="${hair}"/>
+      <path d="M${100 + s * (R + 3)} ${hy + R * .2} Q${100 + s * (R + 6)} ${sh + 4} ${100 + s * (R - 1)} ${sh + 18} Q${100 + s * (R - 4)} ${sh + 26} ${100 + s * (R - 1)} ${sh + 34}" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>`).join('');
+  }
+  if (c.hair === 'dad') front = [[-.5, -.92], [-.05, -1.12], [.42, -1.12]].map(([kx, ky]) => `<path d="M${100 + kx * R - 7} ${hy + ky * R + 6} q6 -9 15 -6" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>`).join('');
   // fringe
   const fy1 = hy - R * .32, fy2 = hy - R * .1, n = 5;
   let fringe = `M${100 - R - 3} ${hy + 6} Q${100 - R - 2} ${hy - R - 8} 100 ${hy - R - 5} Q${100 + R + 2} ${hy - R - 8} ${100 + R + 3} ${hy + 6}`;
-  if (c.hair === 'short') fringe = `M${100 - R - 3} ${hy + 4} Q${100 - R - 2} ${hy - R - 10} 100 ${hy - R - 6} Q${100 + R + 2} ${hy - R - 9} ${100 + R + 3} ${hy + 4}
+  if (c.hair === 'dad') fringe = `M${100 - R - 1} ${hy - R * .02} C${100 - R - 4} ${hy - R * 1.3} ${100 + R * .2} ${hy - R * 1.6} ${100 + R * .92} ${hy - R * 1.06}
+      Q${100 + R + 4} ${hy - R * .7} ${100 + R + 1} ${hy - R * .02} L${100 + R * .86} ${hy - R * .14} Q${100 + R * .8} ${hy - R * .55} ${100 + R * .3} ${hy - R * .64}
+      Q${100 - R * .25} ${hy - R * .7} ${100 - R * .6} ${hy - R * .48} Q${100 - R * .84} ${hy - R * .32} ${100 - R * .88} ${hy - R * .1} Z`;
+  else if (c.hair === 'short' || c.hair === 'mom') fringe = `M${100 - R - 3} ${hy + 4} Q${100 - R - 2} ${hy - R - 10} 100 ${hy - R - 6} Q${100 + R + 2} ${hy - R - 9} ${100 + R + 3} ${hy + 4}
       Q${100 + R * .75} ${hy - R * .62} ${100 + R * .05} ${hy - R * .5} Q${100 - R * .55} ${hy - R * .32} ${100 - R * .88} ${hy - R * .02} Z`;
   else {
     for (let k = 0; k <= n; k++) { const x = 100 + R * .92 - (k / n) * R * 1.84; fringe += ` Q${(x + R * .18).toFixed(1)} ${fy2.toFixed(1)} ${x.toFixed(1)} ${(k % 2 ? fy1 : fy1 + 4).toFixed(1)}`; }
@@ -394,10 +411,12 @@ function svgGirl(id, o = {}) {
   const eyesSvg = eyes === 'open'
     ? [-1, 1].map(s => `<ellipse cx="${100 + s * ex}" cy="${ey}" rx="${er}" ry="${er * 1.2}" fill="${c.eye}"/><ellipse cx="${100 + s * ex}" cy="${ey + 1}" rx="${er * .6}" ry="${er * .75}" fill="#1d1712"/>
         <circle cx="${100 + s * ex - er * .35}" cy="${ey - er * .45}" r="${er * .38}" fill="#fff"/>
-        <path d="M${100 + s * (ex + er * .9)} ${ey - er * .7} l${s * 3.5} -2.5" stroke="#3a2a1e" stroke-width="1.8" stroke-linecap="round"/>`).join('')
+        ${c.brows ? `<path d="M${100 + s * ex - er * 1.2} ${ey - er * 2.1} q${er * 1.2} -2 ${er * 2.4} 0" stroke="${hairDk}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`
+          : `<path d="M${100 + s * (ex + er * .9)} ${ey - er * .7} l${s * 3.5} -2.5" stroke="#3a2a1e" stroke-width="1.8" stroke-linecap="round"/>`}`).join('')
     : [-1, 1].map(s => `<path d="M${100 + s * ex - er} ${ey} Q${100 + s * ex} ${ey + er * .9} ${100 + s * ex + er} ${ey}" stroke="#3a2a1e" stroke-width="2.4" fill="none" stroke-linecap="round"/>`).join('');
   const my = hy + R * .52;
   const mouthSvg = mouth === 'o' ? `<ellipse cx="100" cy="${my + 1}" rx="3.6" ry="4.4" fill="#b8465a"/>`
+    : c.grin ? `<path d="M${100 - R * .3} ${my - 3} Q100 ${my + R * .26} ${100 + R * .3} ${my - 3} Z" fill="#8a3242"/><path d="M${100 - R * .24} ${my - 2.4} Q100 ${my + 1} ${100 + R * .24} ${my - 2.4} Z" fill="#fff"/>`
     : `<path d="M${100 - R * .17} ${my - 1} Q100 ${my + R * .14} ${100 + R * .17} ${my - 1}" stroke="#b8465a" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
   const freckles = c.freckles ? [-1, 1].map(s => [0, 1, 2].map(k => `<circle cx="${100 + s * (R * .36 + (k - 1) * 4)}" cy="${hy + R * .4 + (k === 1 ? -2 : 0)}" r="1.1" fill="#c98a5a"/>`).join('')).join('') : '';
   let torso = `<path d="M${100 - tw} ${sh + 6} Q${100 - tw} ${sh - 2} ${100 - tw + 10} ${sh - 2} L${100 + tw - 10} ${sh - 2} Q${100 + tw} ${sh - 2} ${100 + tw} ${sh + 6}
@@ -417,7 +436,24 @@ function svgGirl(id, o = {}) {
       <path d="M${100 + s * (ex + er * 1.9)} ${ey - er * .7} L${100 + s * R * .94} ${ey - er * 1.2}" stroke="${c.frame}" stroke-width="2.2" stroke-linecap="round"/>
       <path d="M${100 + s * (ex + er * 2.3)} ${ey + er * 1.9} l${s * 3} 2.4" stroke="${skinDk}" stroke-width="1.6" stroke-linecap="round"/>`).join('')
       + `<path d="M${100 - ex + er * 1.9} ${ey - er * .4} Q100 ${ey - er * 1.2} ${100 + ex - er * 1.9} ${ey - er * .4}" stroke="${c.frame}" stroke-width="2.4" fill="none"/>` : '';
-  const ears = c.hair === 'short' ? '' : `<circle cx="${100 - R + 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/><circle cx="${100 + R - 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/>`;
+  if (c.plaid) {   // flannel: clip criss-cross stripes to the shirt shape
+    const d = `M${100 - tw} ${sh + 6} Q${100 - tw} ${sh - 2} ${100 - tw + 10} ${sh - 2} L${100 + tw - 10} ${sh - 2} Q${100 + tw} ${sh - 2} ${100 + tw} ${sh + 6} L${100 + tw * 1.02} ${hip + 2} Q100 ${hip + 6} ${100 - tw * 1.02} ${hip + 2} Z`;
+    let lines = '';
+    for (let x = 100 - tw + 6; x < 100 + tw; x += 13) lines += `<rect x="${x}" y="${sh - 4}" width="5" height="${hip - sh + 12}" fill="${c.topDk}" opacity=".7"/><rect x="${x + 7}" y="${sh - 4}" width="1.6" height="${hip - sh + 12}" fill="${c.accent}" opacity=".8"/>`;
+    for (let y = sh + 6; y < hip + 4; y += 13) lines += `<rect x="${100 - tw - 4}" y="${y}" width="${tw * 2 + 8}" height="5" fill="${c.topDk}" opacity=".55"/><rect x="${100 - tw - 4}" y="${y + 7}" width="${tw * 2 + 8}" height="1.6" fill="${c.accent}" opacity=".7"/>`;
+    torso += `<clipPath id="shirt"><path d="${d}"/></clipPath><g clip-path="url(#shirt)">${lines}</g>
+      <path d="M${100 - 11} ${sh - 2} L100 ${sh + 12} L${100 + 11} ${sh - 2}" fill="none" stroke="${c.topDk}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M100 ${sh + 12} L100 ${hip - 6}" stroke="${c.topDk}" stroke-width="2"/>
+      ${[0, 1, 2].map(k => `<circle cx="102.5" cy="${sh + 20 + k * 12}" r="1.8" fill="#e8edf5"/>`).join('')}`;
+  }
+  if (c.belt) torso += `<rect x="${100 - tw + 1}" y="${hip - 5}" width="${tw * 2 - 2}" height="7" rx="2" fill="${c.belt}"/><rect x="95" y="${hip - 6}" width="10" height="9" rx="2" fill="none" stroke="#d9c38a" stroke-width="2"/>`;
+  if (c.vest) torso += `<path d="M${100 - 10} ${sh - 2} L100 ${sh + 10} L${100 + 10} ${sh - 2} Z" fill="${c.sleeve}"/>
+      <path d="M${100 - 10} ${sh - 2} Q${100 - 4} ${sh + 6} 100 ${sh + 10} Q${100 + 4} ${sh + 6} ${100 + 10} ${sh - 2}" stroke="${c.topDk}" stroke-width="3" fill="none"/>
+      <path d="M100 ${sh + 10} L100 ${hip + 2}" stroke="${c.topDk}" stroke-width="2.5"/><circle cx="100" cy="${sh + 18}" r="2.2" fill="#d9dde3"/>
+      <path d="M${100 - tw + 7} ${sh + 30} h12 M${100 + tw - 19} ${sh + 30} h12" stroke="${c.topDk}" stroke-width="2.5" stroke-linecap="round"/>`;
+  // a slightly squarer jaw for Dad
+  const jaw = c.jaw ? `<rect x="${100 - R * .86}" y="${hy}" width="${R * 1.72}" height="${R * .9}" rx="${R * .52}" fill="${skin}"/>` : '';
+  const ears = (c.hair === 'short' || c.hair === 'mom') ? '' : `<circle cx="${100 - R + 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/><circle cx="${100 + R - 1}" cy="${hy + 6}" r="7" fill="${skinDk}"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="200" height="240">
   ${back}
   ${leg(0, lx, ly)}${leg(1, rx, ry)}
@@ -428,6 +464,7 @@ function svgGirl(id, o = {}) {
   <path d="${fringe}" fill="${hair}"/>
   <path d="M${100 - R * .55} ${hy - R * .78} Q100 ${hy - R * 1.02} ${100 + R * .3} ${hy - R * .86}" stroke="${hairHi}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>
   ${front}
+  ${jaw}
 <g transform="${turn ? `translate(${100 + turn * 13} 0) scale(${1 - turn * .1} 1) translate(-100 0)` : ''}">
   ${eyesSvg}
   <ellipse cx="${100 - R * .6}" cy="${hy + R * .42}" rx="${R * .15}" ry="${R * .09}" fill="#ff8f9c" opacity=".55"/>
@@ -445,14 +482,15 @@ const CHARS = [
   { id:'A', name:'Rascal', blurb:'Scrappy & brave', size:.82, fn:svgA, jump:{ al:140, ar:-140, mouth:'o' }, fall:{ al:70, ar:-70, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:40, ar:-40 } },
   { id:'B', name:'Goldie', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
   { id:'C', name:'Scruff', blurb:'Wild & shaggy',   size:1.2, fn:svgC, jump:{ al:120, ar:-120, mouth:'o' }, fall:{ al:60, ar:-60, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:35, ar:-35 } },
-  ...[['CL', 'Clara', 6, .9], ['LE', 'Lena', 8, 1.04], ['HA', 'Hannah', 12, 1.22], ['GK', 'Grandma Kathy', 0, 1.22]].map(([id, name, age, size]) => ({
-    id, name, age, girl:true, blurb:age ? `Age ${age}` : 'Age: top secret', size, fn:o => svgGirl(id, o),
+  ...[['CL', 'Clara', 6, .9], ['LE', 'Lena', 8, 1.04], ['HA', 'Hannah', 12, 1.22], ['GK', 'Grandma Kathy', 'Age: top secret', 1.22],
+      ['MO', 'Mom', 'Trail boss', 1.42], ['DA', 'Dad', 'S\'mores champion', 1.5]].map(([id, name, age, size]) => ({
+    id, name, age, girl:true, blurb:typeof age === 'number' ? `Age ${age}` : age, size, fn:o => svgGirl(id, o),
     jump:{ al:125, ar:-125, mouth:'o' }, fall:{ al:55, ar:-55, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:35, ar:-35 } })),
 ];
 CHARS.forEach(c => { c.group = c.girl ? 'girl' : 'squatch'; });
 const isGirl = id => !!(CHARS.find(c => c.id === id) || {}).girl;
 const SPR = {};
-const VIS = { A:.94, B:.82, C:.92, CL:.88, LE:.9, HA:.93, GK:.9 };   // visible-height fraction of each sprite (re-measured on load)
+const VIS = { A:.94, B:.82, C:.92, CL:.88, LE:.9, HA:.93, GK:.9, MO:.92, DA:.9 };   // visible-height fraction of each sprite (re-measured on load)
 // width to draw a squatch so it stands `h` px tall (times its own size unless raw)
 function charW(id, h, raw = false) { const c = CHARS.find(c => c.id === id); return h * (raw ? 1 : c.size) / (1.2 * VIS[id]); }
 function loadSprite(name, svg, w = 150, h = 180) {
@@ -1209,7 +1247,7 @@ function selItems() {
   if (SEL.step === 'adv') return ADVENTURES.map(a => ({ kind:'adv', a, blocked:a.girl === G.hero }));
   return CHARS.filter(c => !c.girl).map(c => ({ kind:'char', c, blocked:c.id === G.hero }));
 }
-function cardGeom(n) { return n >= 5 ? { w:172, h:288, gap:184 } : n === 4 ? { w:204, h:288, gap:222 } : { w:210, h:288, gap:250 }; }
+function cardGeom(n) { return n >= 6 ? { w:146, h:288, gap:154 } : n === 5 ? { w:172, h:288, gap:184 } : n === 4 ? { w:204, h:288, gap:222 } : { w:210, h:288, gap:250 }; }
 const cardX = (i, n) => W / 2 + (i - (n - 1) / 2) * cardGeom(n).gap;
 const PILLS = { y:88, h:34, w:132 };
 function firstOpen(items, pref) { if (pref >= 0 && items[pref] && !items[pref].blocked) return pref; return Math.max(0, items.findIndex(it => !it.blocked)); }
@@ -1885,7 +1923,8 @@ function idleFrame(id, seed) {
 }
 function drawTitle() {
   drawTitleBg();
-  [[92, 'C', 124, false, 2.1], [212, 'B', 124, false, 0], [318, 'A', 124, false, 1.3], [530, 'CL', 124, true, .7], [640, 'LE', 124, true, 2.6], [752, 'HA', 124, true, 1.9], [872, 'GK', 124, true, 3.3]].forEach(([x, id, w, flip, sd]) =>
+  [[60, 'C', 118, false, 2.1], [158, 'B', 118, false, 0], [243, 'A', 118, false, 1.3], [346, 'CL', 118, true, .7], [425, 'LE', 118, true, 2.6],
+   [509, 'HA', 118, true, 1.9], [604, 'MO', 118, true, 4.1], [706, 'DA', 118, true, 5.2], [826, 'GK', 118, true, 3.3]].forEach(([x, id, w, flip, sd]) =>
     drawSprite(idleFrame(id, sd), x, 452, charW(id, w), flip, 1, 1 + Math.sin(G.time * 2.4 + sd) * .012));
   ctx.save();
   const cb = CLUB_BTN;
@@ -1935,7 +1974,7 @@ function drawSelect() {
     if (it.kind === 'char') {
       const c = it.c;
       const fr = sel ? (Math.floor(SEL.t * 8) % 4 < 2 && SEL.t < .5 ? c.id + '_jump' : idleFrame(c.id, i)) : c.id + '_idle';
-      drawSprite(fr, x, top + 202, charW(c.id, SEL.step === 'sib' ? 108 : 118), false, 1, 1 + (sel ? Math.sin(G.time * 3) * .015 : 0));
+      drawSprite(fr, x, top + 202, charW(c.id, SEL.step === 'sib' ? 108 : Math.min(118, 166 / c.size)), false, 1, 1 + (sel ? Math.sin(G.time * 3) * .015 : 0));
       title = c.name; blurb = c.blurb;
     } else {
       const a = it.a;
