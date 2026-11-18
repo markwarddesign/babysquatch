@@ -480,7 +480,7 @@ function svgGirl(id, o = {}) {
 
 const CHARS = [
   { id:'A', name:'Rascal', blurb:'Scrappy & brave', size:.82, fn:svgA, jump:{ al:140, ar:-140, mouth:'o' }, fall:{ al:70, ar:-70, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:40, ar:-40 } },
-  { id:'B', name:'Goldie', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
+  { id:'B', name:'Teddy', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
   { id:'C', name:'Scruff', blurb:'Wild & shaggy',   size:1.2, fn:svgC, jump:{ al:120, ar:-120, mouth:'o' }, fall:{ al:60, ar:-60, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:35, ar:-35 } },
   ...[['CL', 'Clara', 6, .9], ['LE', 'Lena', 8, 1.04], ['HA', 'Hannah', 12, 1.22], ['GK', 'Grandma Kathy', 'Age: top secret', 1.22],
       ['MO', 'Mom', 'Trail boss', 1.42], ['DA', 'Dad', 'S\'mores champion', 1.5]].map(([id, name, age, size]) => ({
@@ -792,9 +792,10 @@ function genLevel(o) {
   const list = [];
   for (let k = 0; k < n; k++) { let t; do t = pool[Math.floor(r() * pool.length)]; while (t === list[k - 1]); list.push(t); }
   if (o.lostAt != null) list[o.lostAt] = 'meadow';
-  const w = START_W + list.reduce((s, t) => s + CHUNK_W[t], 0) + END_W;
+  const w = START_W + list.reduce((s, t) => s + CHUNK_W[t], 0) + END_W + (o.end ? 4 : 0);
   return {
     name:o.name, sky:o.sky, w, goal:o.goal, girl:o.girl, needSib:o.lostAt != null, kiteAhead:o.kiteAhead, tips:o.tips, girlTips:o.girlTips,
+    finds:o.finds, rain:o.rain, win:o.win,
     build(a) {
       const r2 = rng32(o.seed * 7 + 3);
       a.ground(0, START_W - 1, 11); a.add('start', 4, 10);
@@ -803,10 +804,12 @@ function genLevel(o) {
       list.forEach((t, k) => {
         if (k && k % 3 === 0) a.add('cp', x + 1, 10);
         const c = CHUNKS[t](a, x, o.d, r2); perches.push(c.perch); spots.push(c.spot);
-        if (k === o.lostAt) a.add('lost', x + 4, 10);
+        if (k === o.lostAt) a.add('lost', x + 4, 10, { who:o.finds });
         x += CHUNK_W[t];
       });
-      a.ground(x, x + END_W - 1, 11); a.add('tent', x + 3, 10, { color:o.tent }); a.add('sign', x + 7, 10);
+      if (o.end === 'den') { a.ground(x, x + END_W + 3, 11); a.add('den', x + 7, 10); }
+      else if (o.end === 'goal') { a.ground(x, x + END_W + 3, 11); a.add('goal', x + 6, 10, { tent:o.tent }); }
+      else { a.ground(x, x + END_W - 1, 11); a.add('tent', x + 3, 10, { color:o.tent }); a.add('sign', x + 7, 10); }
       for (let p = 0; p < (o.pages || 0); p++) { const [sx, sy] = spots[Math.floor((p + .5) * n / o.pages)]; a.add('page', sx, sy); }
       if (o.thief) a.add('thief', 9, 10, { path:[[9, 10], ...perches, [x + END_W + 4, 6]], escape:true });
     }
@@ -842,15 +845,32 @@ const GEN = {
       'It keeps hopping away. Don\'t give up!', 'Grandma says she\'s "just warming up."', 'Follow the purple paw prints!', 'This recipe won Grandma a blue ribbon.',
       'It\'s dark, but you can still smell that pie.', 'The bandit is running out of places to hide!'],
     tip:'Get close and it hops away. Keep chasing!', first:'Chase it down. Grandma is right behind you.' },
+  // ---- the grown-ups' own adventures ----
+  piggy:{ goal:'piggy', tent:'#3b6fb0', end:'den', skies:['day', 'day', 'day', 'sunset', 'day', 'day', 'sunset', 'sunset', 'night', 'night'],
+    win:['Home Sweet Home!', ['Teddy is snug in the den with Mama Squatch.', 'Best. Piggyback ride. Ever.']],
+    names:['Sleepy Teddy', 'Giddy-Up!', 'Bumpy Trail', 'Splash Crossing', 'Ranger Dodge', 'Berry Snack Break', 'Bear Bounce', 'Sunset Shuffle', 'Starlight Trail', 'Home to Mama'],
+    story:['Dad found a baby squatch named Teddy, too sleepy to walk!', 'Teddy giggles every time Dad jumps.', 'Hold on tight, Teddy!',
+      'Dad keeps Teddy\'s feet dry. Mostly.', 'Rangers would never believe this. Stay hidden!', 'Teddy shares a berry. It\'s a little sticky.',
+      'Bears make great trampolines. Teddy agrees.', 'Teddy is humming a squatch lullaby.', 'Teddy is pointing at every star.', 'Teddy can smell home! Find Mama\'s den.'],
+    tip:'Press jump again in the air: Teddy gives you a boost!', first:'Carry Teddy home to Mama Squatch.' },
+  roundup:{ goal:'roundup', tent:'#3f8f74', end:'goal', rain:true, skies:['day', 'day', 'sunset', 'day', 'day', 'sunset', 'day', 'sunset', 'night', 'day'],
+    finds:{ 0:'CL', 3:'LE', 6:'HA' },
+    win:['Everyone\'s Dry!', ['The whole family is cozy in the tent.', 'Mom brought hot cocoa. Of course she did.']],
+    names:['Thunderclap!', 'Puddle Path', 'Drizzle Woods', 'Soggy Bottom', 'Raindrop Ridge', 'Muddy Meadow', 'Downpour Dash', 'Rumble Hills', 'Lightning Lookout', 'Rainbow Camp'],
+    story:['A storm rolled in and the girls scattered! Clara\'s out there somewhere.', 'Splash! Mom loves a good puddle.', 'The trees keep you a little dry.',
+      'Lena ran off to save her journal from the rain!', 'Up here, the umbrella really catches the wind.', 'Mud everywhere. Clara thinks it\'s great.',
+      'Hannah went after the tarp that blew away!', 'Thunder! Everybody stay close to Mom.', 'Almost to camp. Count heads: one, two, three!', 'The rain is stopping… is that a rainbow?'],
+    tip:'Hold jump while falling to float with the umbrella.', first:'Find each girl and bring everyone back to the tent.' },
 };
 function genLevels(id) {
   const g = GEN[id], out = [];
   g.names.forEach((name, k) => {
-    const first = k === 0 && g.first;
+    const first = k === 0 && g.first, last = k === g.names.length - 1;
     const tips = [g.story[k], first || g.tip, first ? g.tip : 'Hold ↓ in a bush to hide. Bounce on critters to shoo them.'];
+    const finds = g.finds && g.finds[k];
     out.push(LEVELS.push(genLevel({ seed:(id.length * 977 + k * 131 + id.charCodeAt(0)) | 0, d:(g.d0 || 0) + k, sky:g.skies[k], name, tips, girlTips:tips,
-      goal:g.goal, girl:g.girl, tent:g.tent, lostAt:k === 0 ? g.lostAt : undefined, pages:g.pages, kiteAhead:g.kiteAhead,
-      thief:g.thief, table:g.thief && k === 0 })) - 1);
+      goal:g.goal, girl:g.girl, tent:g.tent, lostAt:(k === 0 && g.lostAt != null) ? g.lostAt : finds ? 1 : undefined, finds, pages:g.pages, kiteAhead:g.kiteAhead,
+      thief:g.thief, table:g.thief && k === 0, rain:g.rain && last ? 'rainbow' : g.rain, end:last ? g.end : undefined, win:last ? g.win : undefined })) - 1);
   });
   return out;
 }
@@ -864,6 +884,8 @@ const ADVENTURES = [
   { id:'lena', name:'Lena\'s Lost Pages', blurb:'Find her journal pages', girl:'LE', levels:[...genLevels('lena'), 4] },
   { id:'hannah', name:'Hannah\'s Kite', blurb:'Chase her runaway kite', girl:'HA', levels:[...genLevels('hannah'), 5] },
   { id:'kathy', name:'Grandma\'s Pie', blurb:'Catch the pie bandit', girl:'GK', levels:[...genLevels('kathy'), 6] },
+  { id:'piggy', name:'Piggyback Ride', blurb:'Carry Teddy home', only:'DA', levels:genLevels('piggy') },
+  { id:'roundup', name:'Rainy Day Roundup', blurb:'Gather the girls', only:'MO', levels:genLevels('roundup') },
 ];
 // saved progress: which level of each adventure you're up to
 let PROG = {};
@@ -902,7 +924,9 @@ const SKINS = ['#f1c27d', '#c68642', '#8d5524', '#e0ac69', '#ffdbac'];
 
 function loadLevel(i, retry) {
   G.level = i; L = buildLevel(i);
-  if (retry) { G.berries = G.lvlBerries; G.hasSib = G.lvlSib; G.pages = G.lvlPages; } else { G.lvlBerries = G.berries; G.lvlSib = G.hasSib; G.lvlPages = G.pages; }
+  if (retry) { G.berries = G.lvlBerries; G.hasSib = G.lvlSib; G.pages = G.lvlPages; G.crew = [...G.lvlCrew]; }
+  else { G.lvlBerries = G.berries; G.lvlSib = G.hasSib; G.lvlPages = G.pages; G.lvlCrew = [...(G.crew || [])]; }
+  G.whee = 0;
   if (L.goal === 'chase') G.hasSib = true;   // Grandma is with you from the start
   if (L.goal === 'collect') L.need = G.pagesTotal;
   if (G.adv) saveProg(G.adv.id, Math.max(0, G.adv.levels.indexOf(i)));
@@ -922,7 +946,7 @@ function loadLevel(i, retry) {
       case 'sign': E.signs.push({ x:bx, bottom }); break;
       case 'den': E.den = { x:bx, bottom }; break;
       case 'sib': E.sib = { x:bx, bottom, freed:G.hasSib, kind:'net' }; break;
-      case 'lost': if (!G.hasSib) E.sib = { x:bx, bottom, freed:false, kind:'lost' }; break;
+      case 'lost': if (d.who ? !G.crew.includes(d.who) : !G.hasSib) E.sib = { x:bx, bottom, freed:false, kind:'lost', who:d.who }; break;
       case 'table': E.tables.push({ x:bx, bottom }); break;
       case 'log': E.logs.push({ x:bx, bottom }); break;
       case 'thief': {
@@ -956,11 +980,12 @@ function loadLevel(i, retry) {
   G.state = 'intro';
 }
 function startGame(from = 0) {
-  G.berries = 0; G.hasSib = false; G.pages = 0;
+  G.berries = 0; G.hasSib = false; G.pages = 0; G.crew = [];
   G.pagesTotal = pagesIn(G.adv.levels);
   if (from) {   // resuming: count what was already done on earlier levels
     const before = G.adv.levels.slice(0, from);
-    G.hasSib = before.some(i => LEVELS[i].needSib);
+    G.hasSib = before.some(i => LEVELS[i].needSib && !LEVELS[i].finds);
+    G.crew = before.map(i => LEVELS[i].finds).filter(Boolean);
     G.pages = pagesIn(before);
   }
   loadLevel(G.adv.levels[from]);
@@ -1083,8 +1108,17 @@ function updatePlay(dt) {
     emit(5, p.x + p.w / 2, p.y + p.h, 'dust', { color:'rgba(220,200,170,.8)', vy:-20, vyr:40, g:0, life:.35 });
   }
   if (p.jumping && !keys.jump && p.vy < -300) p.vy = -300;
+  // Dad + Teddy: a second jump in mid-air
+  if (L.goal === 'piggy' && p.buffer > 0 && p.coyote <= 0 && !p.onGround && !p.boosted) {
+    p.vy = -660; p.buffer = 0; p.boosted = true; p.jumping = true; G.whee = .9; sfx.boing();
+    emit(8, p.x + p.w / 2, p.y + p.h, 'heart', { color:'#ffb3c1', g:-40, life:.7, spread:120, size:7 });
+  }
+  if (p.onGround) p.boosted = false;
   if (p.vy >= 0) p.jumping = false;
   p.vy = Math.min(p.vy + 2000 * dt, 900);
+  // Mom's umbrella: hold jump while falling to float down
+  p.gliding = L.goal === 'roundup' && keys.jump && !p.onGround && p.vy > 100;
+  if (p.gliding) p.vy = 100;
 
   const wasAir = !p.onGround, landV = p.vy;
   moveX(p, p.vx * dt);
@@ -1118,8 +1152,9 @@ function updatePlay(dt) {
   // sibling rescue
   const s = E.sib;
   if (s && !s.freed && Math.abs(s.x - (p.x + p.w / 2)) < 30 && Math.abs(s.bottom - (p.y + p.h)) < 60) {
-    s.freed = true; G.hasSib = true; sfx.rescue();
-    banner(s.kind === 'lost' ? `You found ${nameOf(G.follow)}! Lead her back to camp.` : `You found ${nameOf(G.follow)}!`, 3);
+    s.freed = true; sfx.rescue();
+    if (s.who) { G.crew.push(s.who); banner(`You found ${nameOf(s.who)}! Everybody stay close.`, 3); }
+    else { G.hasSib = true; banner(s.kind === 'lost' ? `You found ${nameOf(G.follow)}! Lead her back to camp.` : `You found ${nameOf(G.follow)}!`, 3); }
     emit(14, s.x, s.bottom - 40, 'heart', { color:'#ff7a93', g:-60, life:1.2, spread:140, size:10 });
     emit(12, s.x, s.bottom - 60, 'rope', { color:'#c9a46a', life:.8, spread:220 });
   }
@@ -1128,7 +1163,7 @@ function updatePlay(dt) {
     if (Math.abs(sg.x - (p.x + p.w / 2)) < 24 && Math.abs(sg.bottom - (p.y + p.h)) < 50) {
       let wait = null;
       const left = E.pages.filter(pg => !pg.got).length;
-      if (L.needSib && !G.hasSib) wait = `Wait! Find ${nameOf(G.follow)} first.`;
+      if (L.needSib && E.sib && !E.sib.freed) wait = `Wait! Find ${nameOf(E.sib.who || G.follow)} first.`;
       else if (left) wait = `${left} more page${left > 1 ? 's' : ''} to find on this trail!`;
       if (wait) { if (!G.banner || G.banner.t < 1) banner(wait, 2); }
       else { loadLevel(G.adv.levels[G.adv.levels.indexOf(G.level) + 1]); return; }
@@ -1137,6 +1172,7 @@ function updatePlay(dt) {
   // den
   if (E.den && p.x + p.w / 2 > E.den.x - 30) {
     G.state = 'win'; G.timer = 3; sfx.win(); P.vx = 0; P.crouch = false; P.hidden = false; finishAdventure();
+    if (L.goal === 'piggy') { G.hasSib = true; G.follow = 'B'; }   // Teddy hops down and runs to Mama
     P.x = E.den.x - 20 - P.w / 2; P.face = 1; G.winX = E.den.x; G.winY = E.den.bottom - 110;
     return;
   }
@@ -1230,7 +1266,8 @@ function updatePlay(dt) {
   }
 
   // sibling trail
-  if (G.hasSib) { hist.push({ x:p.x + p.w / 2, b:p.y + p.h, face:p.face, air:!p.onGround }); if (hist.length > 60) hist.shift(); }
+  if (G.hasSib || G.crew.length) { hist.push({ x:p.x + p.w / 2, b:p.y + p.h, face:p.face, air:!p.onGround }); if (hist.length > 110) hist.shift(); }
+  G.whee = Math.max(0, G.whee - dt);
 
   // camera
   const tx = clamp(p.x + p.w / 2 - W * .42 + p.face * 40, 0, L.w * T - W);
@@ -1244,7 +1281,7 @@ const CARD = { y:132 };
 // what's on screen for the current select step
 function selItems() {
   if (SEL.step === 'hero') return CHARS.filter(c => c.group === SEL.group).map(c => ({ kind:'char', c, blocked:false }));
-  if (SEL.step === 'adv') return ADVENTURES.map(a => ({ kind:'adv', a, blocked:a.girl === G.hero }));
+  if (SEL.step === 'adv') return ADVENTURES.filter(a => !a.only || a.only === G.hero).map(a => ({ kind:'adv', a, blocked:a.girl === G.hero }));
   return CHARS.filter(c => !c.girl).map(c => ({ kind:'char', c, blocked:c.id === G.hero }));
 }
 function cardGeom(n) { return n >= 6 ? { w:146, h:288, gap:154 } : n === 5 ? { w:172, h:288, gap:184 } : n === 4 ? { w:204, h:288, gap:222 } : { w:210, h:288, gap:250 }; }
@@ -1302,6 +1339,7 @@ function updateSelect(dt) {
 }
 function beginAdventure() {
   if (G.sib === G.hero || isGirl(G.sib)) G.sib = CHARS.find(c => !c.girl && c.id !== G.hero).id;
+  if (G.adv.id === 'piggy') G.sib = 'B';   // Teddy's Mama waits at the den
   try { localStorage.setItem('squatchPick', JSON.stringify({ hero:G.hero, sib:G.sib, adv:G.adv.id })); } catch (e) {}
   const from = PROG[G.adv.id] || 0;
   startGame(from > 0 && from < G.adv.levels.length ? from : 0);
@@ -1592,14 +1630,16 @@ function bubble(text, x, y, color = '#e63946') {
   ctx.fillStyle = color; ctx.fillText(text, x, y + 4);
 }
 function drawSibling() {
-  const s = E.sib, F = G.follow;
+  const s = E.sib;
+  let F = G.follow;
   if (s && !s.freed && s.kind === 'lost') {
+    F = s.who || F;
     // lost girl sitting on a stump, a little teary
     ctx.fillStyle = '#7a5230'; rr(s.x - 26, s.bottom - 16, 52, 16, 5); ctx.fill();
     ctx.fillStyle = '#a77a4a'; ctx.beginPath(); ctx.ellipse(s.x, s.bottom - 16, 26, 6, 0, 0, 7); ctx.fill();
     drawSprite(Math.sin(G.time * 1.7) > .93 ? F + '_blink' : F + '_idle', s.x, s.bottom - 12, charW(F, 62), false, 1, 1 + Math.sin(G.time * 2) * .01);
     if (Math.random() < .03) emit(1, s.x + (Math.random() < .5 ? -10 : 10), s.bottom - 62, 'drop', { color:'#9fd4ff', g:300, vy:-20, vyr:20, life:.5, size:2.5, spread:20 });
-    bubble('I\'m lost!', s.x + 52, s.bottom - 112 + Math.sin(G.time * 4) * 3);
+    bubble(s.who ? 'Mom!' : 'I\'m lost!', s.x + 52, s.bottom - 112 + Math.sin(G.time * 4) * 3);
     return;
   }
   if (s && !s.freed) {
@@ -1777,9 +1817,72 @@ function drawPlayer() {
   const sx = p.crouch ? 1.1 : (!p.onGround ? .94 : 1), sy = p.crouch ? .72 : (!p.onGround ? 1.06 : 1);
   if (!SPR[f]) { ctx.fillStyle = '#7a3f22'; ctx.fillRect(p.x, p.y, p.w, p.h); return; }
   const lean = p.onGround && Math.abs(p.vx) > 120 && !p.crouch ? .07 : 0;
+  const heroH = 66 * charById(A).size;
+  // Teddy riding piggyback: drawn behind Dad so just the head and arms peek over his shoulder
+  let rider = null;
+  if (L.goal === 'piggy' && G.state !== 'win') {
+    const bob = p.onGround && Math.abs(p.vx) > 20 ? Math.abs(Math.sin(p.animT * 10)) * 3 : 0;
+    const rf = p.hurtT > 0 ? 'B_hurt' : (!p.onGround || G.whee > 0) ? 'B_jump' : (G.time % 4.1 < .14 ? 'B_blink' : 'B_idle');
+    rider = { x:cx - p.face * 22, b:b - heroH * .56 * sy - bob };
+    drawSprite(rf, rider.x, rider.b, charW('B', 58), p.face < 0, 1, 1, 1, lean - p.face * .12);
+  }
   drawSprite(f, cx, b + 2, charW(G.hero, 66), p.face < 0, sx, sy, 1, lean);
+  if (rider && G.whee > 0) bubble('Wheee!', rider.x + 30, rider.b - 74);
+  if (L.goal === 'roundup' && G.state !== 'win') drawUmbrella(cx + p.face * 6, b - heroH * sy - 22, p.gliding ? 48 : 40, p.face, cx + p.face * 15, b - heroH * .5);
   if (G.kite && G.state !== 'win') drawKiteShape(cx - p.face * 16, b - charW(G.hero, 66) * 1.2 * VIS[G.hero] - 18 + Math.sin(G.time * 5) * 2, .5);
   if (G.pie && G.state !== 'win') drawPie(cx, b - charW(G.hero, 66) * 1.2 * VIS[G.hero] - 4 + Math.sin(G.time * 5) * 1.5, .6);
+}
+function drawUmbrella(x, y, r, face, hx, hy) {
+  ctx.strokeStyle = '#4a3a2e'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(hx, hy); ctx.stroke();
+  ctx.beginPath(); ctx.arc(hx - face * 4, hy, 4, 0, Math.PI); ctx.stroke();
+  ctx.save(); ctx.translate(x, y); ctx.rotate(face * -.12 + Math.sin(G.time * 3) * .03);
+  const n = 6, top = -r * .2;   // dome: coral with white panels, scalloped hem
+  for (let k = 0; k < n; k++) {
+    const a0 = Math.PI + k / n * Math.PI, a1 = Math.PI + (k + 1) / n * Math.PI;
+    ctx.fillStyle = k % 2 ? '#fff6ee' : '#e87a5a';
+    ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(Math.cos(a0) * r, Math.sin(a0) * r * .75 + 4);
+    ctx.quadraticCurveTo(Math.cos((a0 + a1) / 2) * r * 1.02, Math.sin((a0 + a1) / 2) * r * .78 + 2, Math.cos(a1) * r, Math.sin(a1) * r * .75 + 4);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = '#e87a5a';
+  for (let k = 0; k < n; k++) { const xa = -r + (k + .5) * (2 * r / n); ctx.beginPath(); ctx.ellipse(xa, 4, r / n, 4, 0, 0, Math.PI); ctx.fill(); }
+  ctx.fillStyle = '#4a3a2e'; circle(0, -r * .78, 3.5);
+  ctx.restore();
+}
+// the girls Mom has found, following her in a line
+function drawCrew() {
+  if (!G.crew || !G.crew.length) return;
+  G.crew.forEach((id, j) => {
+    let sx, sb, face = P.face, moving = false, air = false;
+    const lag = 28 + j * 24;
+    if (hist.length > lag) {
+      const h0 = hist[hist.length - lag], h1 = hist[hist.length - lag - 4] || h0;
+      sx = h0.x - h0.face * 26; sb = h0.b; face = h0.face; moving = Math.abs(h0.x - h1.x) > .5; air = h0.air;
+    } else { sx = P.x + P.w / 2 - P.face * (26 + j * 30); sb = P.y + P.h; }
+    if (G.state === 'win' && E.goal) { sx = E.goal.x - 146 - j * 46; sb = E.goal.bottom; air = moving = false; face = 1; }
+    let fr = id + '_idle';
+    if (air) fr = id + (moving ? '_jumpT' : '_jump'); else if (moving) fr = id + ['_walk1', '_run', '_walk2', '_run'][Math.floor(G.time * 10 + j) % 4];
+    else if ((G.time + j) % 3.3 < .12) fr = id + '_blink';
+    if (G.state === 'win') fr = Math.floor(G.time * 3 + j) % 2 ? id + '_jump' : id + '_idle';
+    drawSprite(fr, sx, sb, charW(id, 66), face < 0, 1, 1, 1, moving && !air ? .06 : 0);
+  });
+}
+function drawRain() {
+  ctx.fillStyle = 'rgba(70,85,110,.16)'; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(210,225,255,.55)'; ctx.lineWidth = 1.6; ctx.beginPath();
+  for (let i = 0; i < 110; i++) {
+    const x = ((i * 89.3 - G.time * 140) % (W + 40) + W + 40) % (W + 40) - 20, y = ((i * 57.7 + G.time * 720) % (H + 40)) - 20;
+    ctx.moveTo(x, y); ctx.lineTo(x - 5, y + 16);
+  }
+  ctx.stroke();
+}
+function drawRainbow(cx) {
+  const x = W * .66 - cx * .03, y = 470;
+  ['#ff6b6b', '#ffb347', '#ffe066', '#7ed07e', '#6bb5ff', '#a98bff'].forEach((c, k) => {
+    ctx.strokeStyle = c; ctx.globalAlpha = .45; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(x, y, 330 - k * 14, Math.PI, 0); ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
 }
 function drawParticles() {
   for (const p of parts) {
@@ -1800,6 +1903,7 @@ function drawDarkness(cx, cy) {
   const light = (x, y, r, a = 1) => { const g = sc.createRadialGradient(x - cx, y - cy, 0, x - cx, y - cy, r); g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(1, 'rgba(0,0,0,0)'); sc.fillStyle = g; sc.beginPath(); sc.arc(x - cx, y - cy, r, 0, 7); sc.fill(); };
   light(P.x + P.w / 2, P.y + 20, 160, .9);
   if (G.hasSib && hist.length) { const h = hist[Math.max(0, hist.length - 30)]; light(h.x, h.b - 30, 90, .6); }
+  (G.crew || []).forEach((id, j) => { const h = hist[Math.max(0, hist.length - 28 - j * 24)]; if (h) light(h.x, h.b - 30, 80, .55); });
   if (E.den) light(E.den.x + 40, E.den.bottom - 50, 240, 1);
   for (const c of E.cps) if (c.on) light(c.x, c.bottom - 40, 70, .6);
   for (const b of E.berries) if (!b.got) light(b.x, b.y, 22, .5);
@@ -1825,6 +1929,7 @@ function drawDarkness(cx, cy) {
 function drawWorld() {
   const cx = Math.round(cam.x), cy = Math.round(cam.y);
   drawBackground(L.sky, cx);
+  if (L.rain === 'rainbow') drawRainbow(cx);
   ctx.save(); ctx.translate(-cx, -cy);
   E.tents.forEach(drawTent);
   E.trees.forEach(drawBigTree);
@@ -1845,6 +1950,7 @@ function drawWorld() {
   if (E.thief) drawThief(E.thief);
   E.bees.forEach(drawBee);
   drawSibling();
+  drawCrew();
   drawPlayer();
   for (const b of E.bushes) {
     const inside = P.hidden && Math.abs(b.x - (P.x + P.w / 2)) < 30;
@@ -1858,19 +1964,21 @@ function drawWorld() {
   drawParticles();
   ctx.restore();
   if (L.sky === 'night') drawDarkness(cx, cy);
+  if (L.rain === true) drawRain();
   ctx.save(); ctx.translate(-cx, -cy); E.humans.forEach(drawMarker); ctx.restore();
 }
 
 function drawHUD() {
   ctx.save();
   const extra = L.goal === 'collect' ? 104 : ((L.goal === 'fetch' && G.kite) || G.pie) ? 44 : 0;
-  ctx.fillStyle = 'rgba(0,0,0,.3)'; rr(12, 10, (G.hasSib ? 276 : 236) + extra, 42, 21); ctx.fill();
+  const pals = G.hasSib ? [G.follow] : L.goal === 'piggy' ? ['B'] : G.crew;   // who's with you
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; rr(12, 10, 236 + pals.length * 36 + extra, 42, 21); ctx.fill();
   for (let i = 0; i < 3; i++) heart(38 + i * 30, 19, 24, i < G.hearts ? '#ff5a6e' : 'rgba(255,255,255,.25)');
   drawBerry({ x:140, y:33, ph:0 });
   ctx.fillStyle = '#fff'; ctx.font = '600 22px Fredoka, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText('× ' + G.berries, 156, 32);
-  if (G.hasSib) drawSprite(G.follow + '_idle', 258, 50, charW(G.follow, 34, true));
-  const ex = G.hasSib ? 290 : 250;
+  pals.forEach((id, j) => drawSprite(id + '_idle', 258 + j * 34, 50, charW(id, 34, true)));
+  const ex = 252 + pals.length * 36;
   if (L.goal === 'collect') { drawPage({ x:ex + 6, y:31, ph:0 }); ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = '600 22px Fredoka, sans-serif'; ctx.fillText(`${G.pages}/${G.pagesTotal}`, ex + 26, 32); }
   if (L.goal === 'fetch' && G.kite) drawKiteShape(ex + 10, 26, .45);
   if (G.pie) drawPie(ex + 16, 38, .55);
@@ -1984,6 +2092,13 @@ function drawSelect() {
         if (a.id === 'hannah') drawKiteShape(x + 52, top + 70, .7);
         if (a.id === 'clara') { drawCampfire(x + 50, top + 200); }
         if (a.id === 'kathy') { drawPie(x + 44, top + 96, .8); drawCritter({ type:'raccoon', x:x + 26, y:top + 176, w:38, h:24, dir:-1, walkT:0 }); }
+      } else if (a.id === 'piggy') {
+        drawSprite('B_jump', x - 14, top + 202 - 60, charW('B', 52), false);
+        drawSprite(sel ? idleFrame('DA', i) : 'DA_idle', x, top + 202, charW('DA', 104), false);
+      } else if (a.id === 'roundup') {
+        drawSprite('CL_idle', x + 48, top + 202, charW('CL', 58), true);
+        drawSprite(sel ? idleFrame('MO', i) : 'MO_idle', x - 14, top + 202, charW('MO', 104), false);
+        drawUmbrella(x - 10, top + 46, 38, 1, x, top + 112);
       } else {
         const mama = girlHero ? G.sib : G.hero;
         drawSprite(mama + '_big', x - 20, top + 202, charW(mama, 124, true), false);
