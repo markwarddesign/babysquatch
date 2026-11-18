@@ -108,13 +108,17 @@ let swipeStart = null;
 cv.addEventListener('pointerdown', e => {
   initAudio();
   // on menu screens, wait for the finger to lift so a swipe can move the carousel instead of tapping
-  if (G.state === 'select') { swipeStart = toGame(e); return; }
+  if (G.state === 'select' || G.state === 'run3d') { swipeStart = toGame(e); return; }
   anyPressed = true; tapPos = toGame(e);
 });
 addEventListener('pointerup', e => {
   if (!swipeStart) return;
-  const p = toGame(e), dx = p.x - swipeStart.x;
-  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(p.y - swipeStart.y)) navPressed = dx < 0 ? 1 : -1;
+  const p = toGame(e), dx = p.x - swipeStart.x, dy = p.y - swipeStart.y;
+  if (G.state === 'run3d') {   // swipe left/right = lanes, up = jump, down = slide, tap = jump
+    if (Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)) navPressed = dx > 0 ? 1 : -1;
+    else if (dy < -30) jumpPressed = true; else if (dy > 30) downPressed = true; else tapPos = swipeStart;
+  }
+  else if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) navPressed = dx < 0 ? 1 : -1;
   else tapPos = swipeStart;
   swipeStart = null;
 });
@@ -530,6 +534,8 @@ function svgGirl(id, o = {}) {
   <path d="M${100 - R * .55} ${hy - R * .78} Q100 ${hy - R * 1.02} ${100 + R * .3} ${hy - R * .86}" stroke="${hairHi}" stroke-width="4" fill="none" stroke-linecap="round" opacity=".8"/>
   ${front}
   ${jaw}
+  ${o.back ? `<ellipse cx="100" cy="${hy - 2}" rx="${R + 1}" ry="${R * (c.hair === 'dad' ? .9 : .97)}" fill="${hair}"/>
+  <path d="M${100 - R * .5} ${hy - R * .6} Q${100 - R * .55} ${hy + R * .2} ${100 - R * .35} ${hy + R * .7} M100 ${hy - R * .8} L100 ${hy + R * .75} M${100 + R * .5} ${hy - R * .6} Q${100 + R * .55} ${hy + R * .2} ${100 + R * .35} ${hy + R * .7}" stroke="${hairDk}" stroke-width="2" fill="none" stroke-linecap="round"/>` : `
 <g transform="${turn ? `translate(${100 + turn * 13} 0) scale(${1 - turn * .1} 1) translate(-100 0)` : ''}">
   ${eyesSvg}
   <ellipse cx="${100 - R * .6}" cy="${hy + R * .42}" rx="${R * .15}" ry="${R * .09}" fill="#ff8f9c" opacity=".55"/>
@@ -538,11 +544,21 @@ function svgGirl(id, o = {}) {
   <path d="M98 ${hy + R * .34} q2 2 4 0" stroke="${skinDk}" stroke-width="2" fill="none" stroke-linecap="round"/>
   ${mouthSvg}
   ${glasses}
-</g>
+</g>`}
   ${arm(-1, al)}${arm(1, ar)}
 </svg>`;
 }
 
+
+// from-behind version of a sprite: drop the face layer (and cover a light tummy with fur)
+const backOf = (c, o) => c.girl ? c.fn({ ...o, back:true }) : backify(c.fn(o), BACK_EXTRA[c.id]);
+function backify(svg, extra = '') { return svg.replace(/<g transform="">[\s\S]*?<\/g>\n?<\/svg>/, extra + '\n</svg>'); }
+const BACK_EXTRA = {
+  A: '<ellipse cx="100" cy="152" rx="24" ry="26" fill="#7a3f22"/><path d="M90 140 L88 160 M110 140 L112 160 M100 120 L100 172" stroke="#5a2c14" stroke-width="2" stroke-linecap="round"/>',
+  B: '<path d="M78 116 Q100 110 122 116 L120 152 Q100 160 80 152 Z" fill="#c98a30"/><path d="M92 124 L90 146 M108 124 L110 146" stroke="#9a6a22" stroke-width="2" stroke-linecap="round"/>',
+  C: '<path d="M84 60 L82 92 M100 54 L100 96 M116 60 L118 92" stroke="#6c3214" stroke-width="2.2" stroke-linecap="round"/>',
+  T: '',
+};
 const CHARS = [
   { id:'A', name:'Rascal', blurb:'Scrappy & brave', size:.82, fn:svgA, jump:{ al:140, ar:-140, mouth:'o' }, fall:{ al:70, ar:-70, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:40, ar:-40 } },
   { id:'B', name:'Teddy', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
@@ -579,6 +595,10 @@ Promise.all(CHARS.flatMap(c => [
   loadSprite(c.id + '_fall', c.fn(c.fall)),
   loadSprite(c.id + '_hurt', c.fn(c.hurt)),
   loadSprite(c.id + '_big', c.fn(), 300, 360),
+  // from-behind frames for the into-the-screen run
+  loadSprite(c.id + '_back1', backOf(c, { lx:-3, ly:-8, rx:3, al:14, ar:-6 })),
+  loadSprite(c.id + '_back2', backOf(c, { lx:-3, rx:3, ry:-8, al:-6, ar:14 })),
+  loadSprite(c.id + '_backJ', backOf(c, { ly:-6, ry:-6, ...c.jump })),
 ])).then(() => {
   for (const c of CHARS) {   // how tall the art actually is inside its frame
     const sp = SPR[c.id + '_idle']; if (!sp) continue;
@@ -1088,6 +1108,229 @@ function dashUpdate(p, dt) {
   if (E.finish && pcx > E.finish.x) { dashFinish(); return true; }
   return false;
 }
+
+/* ================= INTO THE WOODS: a 3D-looking lane runner, camera behind you ================= */
+const R3 = { F:545, horizon:176, camH:2.3, camBack:4.2, laneW:1.7, trailW:2.9, len:760 };
+let RUN = null;
+const r3curve = z => Math.sin(z * .011) * 5 + Math.sin(z * .0047 + 1) * 7;          // the trail winds left and right
+const r3hill = z => Math.sin(z * .013) * 1.1 + Math.sin(z * .0051 + 2) * 1.5;        // …and up and down
+const r3laneX = l => l * R3.laneW;
+function r3build() {
+  const items = [], rnd = rng32(777);
+  const add = (z, type, o = {}) => items.push({ z, type, ...o });
+  let z = 28;
+  while (z < R3.len - 30) {
+    const d = z / R3.len, roll = rnd(), lane = Math.floor(rnd() * 3) - 1;
+    if (roll < .16) { add(z, 'rock', { lane }); if (d > .4 && rnd() < .5) add(z, 'rock', { lane:lane === 1 ? -1 : lane + 1 }); }
+    else if (roll < .28) add(z, 'log');
+    else if (roll < .38 && z > 80) add(z, 'branch');
+    else if (roll < .48 && z > 60) { add(z, 'gap', { len:3 + d * 1.5 }); for (let k = 0; k < 4; k++) add(z + .6 + k * 1.2, 'berry', { lane:0, y:1.6 + Math.sin(k / 3 * Math.PI) * .8 }); }
+    else if (roll < .64) { add(z, 'crate', { lane }); if (rnd() < .5) add(z, 'crate', { lane:-lane || 1 }); }
+    else if (roll < .74) add(z, 'critter', { lane, ph:rnd() * 6 });
+    else if (roll < .82 && z > 100) { add(z, 'mush', { lane }); for (let k = 1; k <= 6; k++) { const t = k / 7; add(z + k * 1.7, 'berry', { lane, y:.7 + (12 * t * .9 - 11 * t * t * .9) }); } }
+    else for (let k = 0; k < 6; k++) add(z + k * 1.4, 'berry', { lane, y:.7 });
+    z += 11 + rnd() * 6 - d * 3;
+  }
+  return items.sort((a, b) => a.z - b.z);
+}
+function startRun3D() {
+  document.body.classList.remove('dash');
+  L = null; G.state = 'run3d'; G.hearts = 3; G.berries = 0; G.banner = null; G.flash = 0;
+  const items = r3build();
+  RUN = { z:0, x:0, lane:0, y:0, vy:0, v:10, slide:0, invul:0, stumble:0, t:0, items, crates:items.filter(i => i.type === 'crate').length, smashed:0,
+    parts:[], fall:0, intro:2.2, shake:0, done:false };
+  banner('Run into the woods!', 2);
+}
+function r3proj(x, y, z) {
+  const R = RUN, camZ = R.z - R3.camBack, dz = Math.max(.05, z - camZ);
+  const slope = (r3curve(camZ + 1) - r3curve(camZ - 1)) / 2;
+  const camX = R.x * .55, camY = r3hill(R.z) + R3.camH;
+  const rx = x + r3curve(z) - (camX + r3curve(camZ) + slope * dz), s = R3.F / dz;
+  return { x:W / 2 + rx * s, y:R3.horizon + (camY - (y + r3hill(z))) * s, s, dz };
+}
+function r3hit(msg) {
+  const R = RUN; if (R.invul > 0) return;
+  G.hearts--; R.invul = 1.4; R.stumble = .6; R.v = 5; R.shake = .3; sfx.hurt();
+  if (msg) banner(msg, 1.2);
+  if (G.hearts <= 0) { G.state = 'run3dover'; G.timer = .6; }
+}
+function r3particles(x, y, z, color, n) { for (let k = 0; k < n; k++) RUN.parts.push({ x, y, z, vx:(Math.random() - .5) * 5, vy:2 + Math.random() * 4, vz:(Math.random() - .3) * 4, life:.8, color }); }
+function updateRun3D(dt) {
+  const R = RUN;
+  if (tapPos) { const hit = Math.hypot(tapPos.x - PAUSE_BTN.x, tapPos.y - PAUSE_BTN.y) < PAUSE_BTN.r + 10; tapPos = null; anyPressed = false; if (hit) { togglePause(); return; } jumpPressed = true; }
+  R.t += dt; R.invul = Math.max(0, R.invul - dt); R.shake = Math.max(0, R.shake - dt);
+  // lanes, jump, slide
+  if (navPressed) { R.lane = clamp(R.lane + navPressed, -1, 1); navPressed = 0; sfx.hide(); }
+  R.x += (r3laneX(R.lane) - R.x) * Math.min(1, dt * 14);
+  if (jumpPressed && R.y <= 0 && !R.fall) { R.vy = 7.6; R.slide = 0; sfx.jump(); }
+  jumpPressed = false;
+  if ((downPressed || keys.down) && R.y <= 0) R.slide = Math.max(R.slide, .55);
+  if (downPressed && R.y > 0) R.vy = Math.min(R.vy, -9);   // ▼ in the air: drop fast
+  downPressed = false;
+  R.slide = Math.max(0, R.slide - dt);
+  R.vy -= 22 * dt; R.y += R.vy * dt;
+  // ground (unless over a gap)
+  const overGap = R.items.some(it => it.type === 'gap' && R.z > it.z && R.z < it.z + it.len);
+  if (R.y <= 0 && !overGap && !R.fall) { R.y = 0; R.vy = 0; }
+  if (overGap && R.y < -.2 && !R.fall) { R.fall = 1; r3hit('Whoops! Into the ditch!'); }
+  if (R.fall) {
+    R.fall -= dt;
+    if (R.fall <= 0) { const g = R.items.find(it => it.type === 'gap' && R.z > it.z - 2 && R.z < it.z + it.len + 2); if (g) R.z = g.z + g.len + 1; R.y = 0; R.vy = 0; R.fall = 0; }
+    return;
+  }
+  // speed: builds up over the run; bumps slow you down
+  const top = 12 + 6 * Math.min(1, R.z / R3.len);
+  if (R.stumble > 0) R.stumble -= dt;
+  R.v += ((R.stumble > 0 ? 5 : top) - R.v) * Math.min(1, dt * 1.5);
+  R.z += R.v * dt;
+  // things on the trail
+  for (const it of R.items) {
+    if (it.gone || Math.abs(it.z - R.z) > .7) continue;
+    const inLane = it.lane === undefined || Math.abs(R.x - r3laneX(it.lane)) < .95;
+    if (!inLane) continue;
+    if (it.type === 'rock' && R.y < .9) r3hit('Bonk! A rock!');
+    if (it.type === 'log' && R.y < .55) r3hit('Trip! Jump the logs!');
+    if (it.type === 'branch' && R.slide <= 0) r3hit('Ouch! Slide under branches!');
+    if (it.type === 'crate' && R.y < 1.3) { it.gone = true; R.smashed++; G.berries += 5; sfx.stomp(); r3particles(r3laneX(it.lane), .5, it.z, '#b07d48', 10); r3particles(r3laneX(it.lane), .8, it.z, '#6a3fb0', 6); }
+    if (it.type === 'berry' && Math.abs(R.y + .6 - it.y) < 1) { it.gone = true; G.berries++; sfx.berry(); }
+    if (it.type === 'critter') {
+      if (R.y > .25 && R.vy < 0) { it.gone = true; R.vy = 6.5; sfx.stomp(); r3particles(r3laneX(it.lane), .4, it.z, '#ffffff', 8); }
+      else if (R.y < .5) r3hit('Eek! A raccoon!');
+    }
+    if (it.type === 'mush' && R.y < .5) { R.vy = 12; it.sq = .3; sfx.boing(); }
+  }
+  for (const it of R.items) if (it.sq > 0) it.sq -= dt;
+  for (const p of R.parts) { p.life -= dt; p.vy -= 14 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; }
+  R.parts = R.parts.filter(p => p.life > 0);
+  if (R.z >= R3.len && !R.done) {   // made it!
+    R.done = true; sfx.win();
+    const pct = R.smashed / Math.max(1, R.crates), medal = pct >= .8 && G.hearts === 3 ? 'gold' : pct >= .5 ? 'silver' : 'bronze';
+    const prev = DASHBEST.r3, newBest = !prev || R.t < prev.t;
+    DASHBEST.r3 = { t:newBest ? R.t : prev.t, medal:!prev || MEDALS[medal] > MEDALS[prev.medal] ? medal : prev.medal };
+    try { localStorage.setItem('squatchDash', JSON.stringify(DASHBEST)); } catch (e) {}
+    RUN.res = { t:R.t, medal, newBest, best:DASHBEST.r3.t };
+    G.state = 'run3dwin'; G.timer = 1;
+  }
+}
+// ---- drawing ----
+function r3tree(p, k) {
+  const s = p.s, x = p.x, y = p.y, h = (5 + hash(k * 3.1) * 3) * s, w = h * .42;
+  ctx.fillStyle = '#5a3d22'; ctx.fillRect(x - .18 * s, y - h * .25, .36 * s, h * .25);
+  const greens = ['#2f6b3c', '#3a7d45', '#46904f'];
+  for (let j = 0; j < 3; j++) { ctx.fillStyle = greens[j]; ctx.beginPath(); const ty = y - h * (.2 + j * .26); ctx.moveTo(x, ty - h * .38); ctx.lineTo(x + w * (1 - j * .22), ty); ctx.lineTo(x - w * (1 - j * .22), ty); ctx.fill(); }
+}
+function r3item(it, p) {
+  const s = p.s, x = p.x, y = p.y;
+  if (it.type === 'rock') {
+    ctx.fillStyle = '#7d8590'; ctx.beginPath(); ctx.moveTo(x - .6 * s, y); ctx.lineTo(x - .48 * s, y - .6 * s); ctx.lineTo(x - .05 * s, y - .9 * s); ctx.lineTo(x + .45 * s, y - .65 * s); ctx.lineTo(x + .6 * s, y); ctx.fill();
+    ctx.fillStyle = '#9aa2ad'; ctx.beginPath(); ctx.moveTo(x - .38 * s, y - .55 * s); ctx.lineTo(x - .05 * s, y - .8 * s); ctx.lineTo(x + .2 * s, y - .6 * s); ctx.fill();
+  } else if (it.type === 'log') {
+    const a = r3proj(-R3.trailW + .2, 0, it.z), b = r3proj(R3.trailW - .2, 0, it.z), h = .55 * s;
+    ctx.fillStyle = '#6b4626'; rr(a.x, y - h, b.x - a.x, h, h / 2); ctx.fill();
+    ctx.strokeStyle = '#5a3a1e'; ctx.lineWidth = Math.max(1, s * .05); ctx.beginPath(); ctx.moveTo(a.x + h, y - h * .5); ctx.lineTo(b.x - h, y - h * .5); ctx.stroke();
+    ctx.fillStyle = '#a77a4a'; ctx.beginPath(); ctx.ellipse(a.x + h * .3, y - h / 2, h * .32, h / 2, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(b.x - h * .3, y - h / 2, h * .32, h / 2, 0, 0, 7); ctx.fill();
+  } else if (it.type === 'branch') {
+    const a = r3proj(-R3.trailW - .3, 0, it.z), b = r3proj(R3.trailW + .3, 0, it.z);
+    ctx.fillStyle = '#5a3d22'; ctx.fillRect(a.x - .2 * s, y - 2.2 * s, .4 * s, 2.2 * s); ctx.fillRect(b.x - .2 * s, y - 2.2 * s, .4 * s, 2.2 * s);
+    ctx.fillStyle = '#6b4626'; rr(a.x, y - 1.55 * s, b.x - a.x, .22 * s, .1 * s); ctx.fill();
+    ctx.fillStyle = '#4f9a3a'; for (let k = 0; k < 7; k++) circle(a.x + (b.x - a.x) * (k + .5) / 7, y - 1.35 * s + Math.sin(k * 2.3) * .08 * s, .26 * s);
+  } else if (it.type === 'crate') {
+    const c = .45 * s; ctx.fillStyle = '#c08a4f'; ctx.fillRect(x - c, y - 2 * c, 2 * c, 2 * c);
+    ctx.strokeStyle = '#8a5a2e'; ctx.lineWidth = Math.max(1, s * .06); ctx.strokeRect(x - c, y - 2 * c, 2 * c, 2 * c);
+    ctx.beginPath(); ctx.moveTo(x - c, y - 2 * c); ctx.lineTo(x + c, y); ctx.moveTo(x + c, y - 2 * c); ctx.lineTo(x - c, y); ctx.stroke();
+    ctx.save(); ctx.translate(x, y - c); ctx.scale(s / 90, s / 90); drawBerry({ x:0, y:4, ph:0 }); ctx.restore();
+  } else if (it.type === 'berry') {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s / 70, s / 70); drawBerry({ x:0, y:0, ph:it.z }); ctx.restore();
+  } else if (it.type === 'critter') {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s / 42, s / 42); drawCritter({ type:'raccoon', x:-19, y:-24, w:38, h:24, dir:Math.sin(RUN.t * 2 + it.ph) > 0 ? 1 : -1, walkT:RUN.t }); ctx.restore();
+  } else if (it.type === 'mush') {
+    const q = 1 + (it.sq > 0 ? Math.sin(it.sq * 25) * .15 : 0);
+    ctx.save(); ctx.translate(x, y); ctx.scale(s / 38 * (2 - q), s / 38 * q);
+    ctx.fillStyle = '#f4ead8'; rr(-8, -22, 16, 22, 5); ctx.fill();
+    ctx.fillStyle = '#e63946'; ctx.beginPath(); ctx.ellipse(0, -24, 24, 14, 0, Math.PI, 0); ctx.fill(); ctx.fillRect(-24, -25, 48, 4);
+    ctx.fillStyle = '#fff'; circle(-10, -30, 3.5); circle(5, -34, 3); circle(14, -27, 2.5); ctx.restore();
+  } else if (it.type === 'finish') {
+    const a = r3proj(-R3.trailW - .4, 0, it.z), b = r3proj(R3.trailW + .4, 0, it.z);
+    ctx.fillStyle = '#7a5230'; ctx.fillRect(a.x - .15 * s, y - 3.4 * s, .3 * s, 3.4 * s); ctx.fillRect(b.x - .15 * s, y - 3.4 * s, .3 * s, 3.4 * s);
+    const n = 14, cw = (b.x - a.x) / n;
+    for (let k = 0; k < n; k++) for (let j = 0; j < 2; j++) { ctx.fillStyle = (k + j) % 2 ? '#fff' : '#222'; ctx.fillRect(a.x + k * cw, y - 3.4 * s + j * .25 * s, cw + 1, .25 * s); }
+    ctx.fillStyle = '#3b2a1e'; ctx.font = `700 ${Math.max(8, .5 * s)}px Fredoka, sans-serif`; ctx.textAlign = 'center'; ctx.fillText('FINISH', (a.x + b.x) / 2, y - 3.55 * s);
+  }
+}
+function drawRun3D() {
+  const R = RUN, camZ = R.z - R3.camBack;
+  ctx.save();
+  if (R.shake > 0) ctx.translate((Math.random() - .5) * 8 * R.shake, (Math.random() - .5) * 8 * R.shake);
+  // sky, sun, far hills that slide as the trail turns
+  const g = ctx.createLinearGradient(0, 0, 0, R3.horizon + 40); g.addColorStop(0, '#7cc6f2'); g.addColorStop(1, '#d6f0fb'); ctx.fillStyle = g; ctx.fillRect(-10, -10, W + 20, H + 20);
+  const turn = (r3curve(camZ + 1) - r3curve(camZ - 1)) * 260;
+  ctx.fillStyle = '#fff6c0'; circle(760 - turn * .2, 70, 34);
+  ctx.fillStyle = '#a9c9de'; ctx.beginPath(); ctx.moveTo(-10, R3.horizon + 10);
+  for (let k = 0; k <= 24; k++) { const x = -10 + k * 42; ctx.lineTo(x, R3.horizon - 30 - Math.abs(Math.sin((k + turn * .01) * 1.3)) * 50); }
+  ctx.lineTo(W + 10, R3.horizon + 10); ctx.fill();
+  ctx.fillStyle = '#6aa66a'; ctx.beginPath(); ctx.moveTo(-10, R3.horizon + 20);
+  for (let k = 0; k <= 32; k++) ctx.lineTo(-10 + k * 32, R3.horizon - 8 - Math.abs(Math.sin(k * 2.1 + turn * .02)) * 22);
+  ctx.lineTo(W + 10, R3.horizon + 20); ctx.fill();
+  ctx.fillStyle = '#5fae4a'; ctx.fillRect(-10, R3.horizon, W + 20, H);
+  // ground strips, far to near
+  const far = 70, step = 1.25;
+  for (let dz = far; dz > .9; dz -= step) {
+    const z1 = camZ + dz, z0 = z1 - step;
+    const A = r3proj(-R3.trailW, 0, z1), B = r3proj(R3.trailW, 0, z1), C = r3proj(R3.trailW, 0, z0), D = r3proj(-R3.trailW, 0, z0);
+    const GA = r3proj(-40, 0, z1), GB = r3proj(40, 0, z1), GC = r3proj(40, 0, z0), GD = r3proj(-40, 0, z0);
+    const band = Math.floor(z1 / 3) % 2;
+    ctx.fillStyle = band ? '#5fae4a' : '#56a043'; ctx.beginPath(); ctx.moveTo(GA.x, GA.y); ctx.lineTo(GB.x, GB.y); ctx.lineTo(GC.x, GC.y + 1); ctx.lineTo(GD.x, GD.y + 1); ctx.fill();
+    const gap = R.items.some(it => it.type === 'gap' && z0 < it.z + it.len && z1 > it.z);
+    ctx.fillStyle = gap ? '#24170e' : band ? '#c9a06f' : '#bd9464'; ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.lineTo(C.x, C.y + 1); ctx.lineTo(D.x, D.y + 1); ctx.fill();
+    if (!gap && band) for (const lx of [-R3.laneW / 2, R3.laneW / 2]) { const a = r3proj(lx, 0, z1), b = r3proj(lx, 0, z0); ctx.strokeStyle = 'rgba(255,240,210,.45)'; ctx.lineWidth = Math.max(1, a.s * .06); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+  }
+  // everything standing up, sorted far to near (trees, items, you)
+  const things = [];
+  const k0 = Math.floor(camZ / 4.5);
+  for (let k = k0; k < k0 + 18; k++) for (const side of [-1, 1]) {
+    const z = k * 4.5 + hash(k * 7 + side) * 2; if (z - camZ < 1.5) continue;
+    things.push({ z, draw:() => r3tree(r3proj(side * (R3.trailW + 1.6 + hash(k * 3 + side) * 5), 0, z), k + side) });
+  }
+  for (const it of R.items) if (!it.gone && it.type !== 'gap' && it.z - camZ > 1 && it.z - camZ < far) {
+    const lx = it.lane === undefined ? 0 : r3laneX(it.lane);
+    things.push({ z:it.z, draw:() => r3item(it, r3proj(lx, it.y || 0, it.z)) });
+  }
+  if (R3.len - camZ < far) things.push({ z:R3.len, draw:() => r3item({ type:'finish', z:R3.len }, r3proj(0, 0, R3.len)) });
+  things.push({ z:R.z, draw:() => {
+    const pg = r3proj(R.x, 0, R.z), p = r3proj(R.x, Math.max(0, R.y), R.z), id = G.hero;
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(pg.x, pg.y, .5 * pg.s * (1 - Math.min(.5, R.y * .15)), .14 * pg.s, 0, 0, 7); ctx.fill();
+    if (R.invul > 0 && Math.floor(R.invul * 12) % 2 === 0) return;
+    const fr = R.fall ? id + '_backJ' : R.y > .05 ? id + '_backJ' : (Math.floor(R.t * R.v * .9) % 2 ? id + '_back1' : id + '_back2');
+    const sy = R.slide > 0 ? .62 : 1, sx = R.slide > 0 ? 1.12 : 1;
+    const dw = charW(id, p.s * .92);
+    drawSprite(fr, p.x, p.y + (R.fall ? (1 - R.fall) * 80 : 0), dw, false, sx, sy);
+    if (G.pip && id !== 'T') drawSprite(R.y > .05 ? 'T_backJ' : 'T_back1', p.x, p.y - p.s * .92 * charById(id).size * sy + p.s * .1, charW('T', p.s * .32, true), false);
+  } });
+  for (const p of R.parts) things.push({ z:p.z, draw:() => { const q = r3proj(p.x, p.y, p.z); ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color; const ps = Math.min(14, q.s * .06); ctx.fillRect(q.x - ps / 2, q.y - ps / 2, ps, ps); ctx.globalAlpha = 1; } });
+  things.sort((a, b) => b.z - a.z).forEach(t => t.draw());
+  ctx.restore();
+  // HUD
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; rr(12, 10, 330, 42, 21); ctx.fill();
+  for (let i = 0; i < 3; i++) heart(38 + i * 30, 19, 24, i < G.hearts ? '#ff5a6e' : 'rgba(255,255,255,.25)');
+  drawBerry({ x:140, y:33, ph:0 }); ctx.fillStyle = '#fff'; ctx.font = '600 22px Fredoka, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText('× ' + G.berries, 156, 32);
+  ctx.fillStyle = '#c08a4f'; ctx.fillRect(232, 22, 20, 20); ctx.strokeStyle = '#8a5a2e'; ctx.lineWidth = 2; ctx.strokeRect(232, 22, 20, 20);
+  ctx.fillStyle = '#fff'; ctx.fillText(`${R.smashed}/${R.crates}`, 260, 32);
+  const prog = clamp(R.z / R3.len, 0, 1);
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; rr(W / 2 - 150, 18, 300, 14, 7); ctx.fill(); ctx.fillStyle = '#7ed07e'; rr(W / 2 - 148, 20, 296 * prog, 10, 5); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '600 15px Fredoka, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Into the Woods', W / 2, 46);
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.arc(PAUSE_BTN.x, PAUSE_BTN.y, PAUSE_BTN.r, 0, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillRect(PAUSE_BTN.x - 6, PAUSE_BTN.y - 7, 4, 14); ctx.fillRect(PAUSE_BTN.x + 2, PAUSE_BTN.y - 7, 4, 14);
+  if (G.banner) {
+    const a = Math.min(1, G.banner.t * 3); ctx.globalAlpha = a; ctx.font = '600 24px Fredoka, sans-serif';
+    const bw = ctx.measureText(G.banner.text).width + 48; ctx.fillStyle = 'rgba(255,250,240,.95)'; rr(W / 2 - bw / 2, 66, bw, 46, 23); ctx.fill();
+    ctx.fillStyle = '#3b2a1e'; ctx.fillText(G.banner.text, W / 2, 90); ctx.globalAlpha = 1;
+  }
+  if (R.t < 3 && G.state === 'run3d') { ctx.fillStyle = 'rgba(255,250,240,.85)'; rr(W / 2 - 230, H - 66, 460, 40, 20); ctx.fill(); ctx.fillStyle = '#3b2a1e'; ctx.font = '600 17px Fredoka, sans-serif';
+    ctx.fillText(isTouch ? 'Swipe ◀ ▶ to change lanes · swipe up to jump · down to slide' : '← → change lanes   ↑ / Space jump   ↓ slide', W / 2, H - 46); }
+  ctx.restore();
+}
+
 function dashFinish() {
   const t = G.dashT, par = L.par, i = L.course;
   const medal = t <= par ? 'gold' : t <= par * 1.18 ? 'silver' : 'bronze';
@@ -1223,8 +1466,9 @@ function startGame(from = 0) {
 const advStep = () => G.adv.levels.indexOf(G.level) + 1;
 function finishAdventure() { saveProg(G.adv.id, 0); }
 const nameOf = id => (CHARS.find(c => c.id === id) || {}).name || '';
-function restartLevel() { loadLevel(G.level, true); }
+function restartLevel() { if (G.prev === 'run3d' && RUN) startRun3D(); else loadLevel(G.level, true); }
 function quitToMenu() {
+  RUN = null; G.prev = 'play';
   document.body.classList.remove('dash');
   G.state = 'select'; L = null; SEL.group = isGirl(G.hero) ? 'girl' : 'squatch'; goStep('hero');
   jumpPressed = anyPressed = false; tapPos = null; keys.left = keys.right = keys.down = keys.jump = false;
@@ -1242,8 +1486,8 @@ function enterDash() { G.mode = 'dash'; G.state = 'select'; SEL.group = isGirl(G
 const courseTile = i => ({ x:W / 2 + ((i % 5) - 2) * 178 - 82, y:128 + Math.floor(i / 5) * 152, w:164, h:136 });
 const MENU_BTNS = [['Resume', 'P'], ['Restart level', 'R'], ['Quit to menu', 'Q'], ['Game Clubhouse', 'G']].map(([label, key], i) => ({ label, key, x:W / 2 - 150, y:206 + i * 62, w:300, h:48 }));
 function togglePause() {
-  if (G.state === 'play') G.state = 'paused';
-  else if (G.state === 'paused') G.state = 'play';
+  if (G.state === 'play' || G.state === 'run3d') { G.prev = G.state; G.state = 'paused'; }
+  else if (G.state === 'paused') G.state = G.prev === 'run3d' ? 'run3d' : 'play';
 }
 
 /* ---------------- physics ---------------- */
@@ -1548,7 +1792,7 @@ const CARD = { y:132 };
 // what's on screen for the current select step
 function selItems() {
   if (SEL.step === 'hero') return CHARS.filter(c => c.group === SEL.group).map(c => ({ kind:'char', c, blocked:false }));
-  if (SEL.step === 'course') return DASH_COURSES.map((c, i) => ({ kind:'course', c, i, blocked:false }));
+  if (SEL.step === 'course') return [{ kind:'run3d', blocked:false }, ...DASH_COURSES.map((c, i) => ({ kind:'course', c, i, blocked:false }))];
   if (SEL.step === 'adv') return ADVENTURES.filter(a => !a.only || a.only === G.hero).map(a => ({ kind:'adv', a, blocked:a.girl === G.hero }));
   return CHARS.filter(c => !c.girl).map(c => ({ kind:'char', c, blocked:c.id === G.hero }));
 }
@@ -1562,7 +1806,7 @@ function goStep(step) {
   let pref = -1;
   if (step === 'hero') pref = items.findIndex(it => it.c.id === G.hero);
   if (step === 'adv') pref = items.findIndex(it => it.a === G.adv);
-  if (step === 'course') pref = G.dashCourse || 0;
+  if (step === 'course') pref = G.dashCourse === undefined ? 0 : G.dashCourse + 1;
   if (step === 'sib') pref = items.findIndex(it => it.c.id === G.sib);
   SEL.i = firstOpen(items, pref); SEL.pos = SEL.i;
 }
@@ -1622,7 +1866,7 @@ function updateSelect(dt) {
     const it = items[SEL.i]; if (!it || it.blocked) return;
     sfx.cp();
     if (SEL.step === 'hero') { G.hero = it.c.id; goStep(G.mode === 'dash' ? 'course' : 'adv'); }
-    else if (SEL.step === 'course') startDash(it.i);
+    else if (SEL.step === 'course') { if (it.kind === 'run3d') startRun3D(); else startDash(it.i); }
     else if (SEL.step === 'adv') {
       G.adv = it.a;
       if (it.a.id === 'home') goStep('sib'); else beginAdventure();
@@ -1661,6 +1905,12 @@ function update(dt) {
     case 'select': updateSelect(dt); break;
     case 'intro': if (consumePress()) G.state = 'play'; break;
     case 'play': updatePlay(dt); break;
+    case 'run3d': updateRun3D(dt); break;
+    case 'run3dover': case 'run3dwin':
+      G.timer -= dt; navPressed = 0;
+      if (G.timer <= 0 && (consumePress() || tapPos)) { tapPos = null; if (G.state === 'run3dover') startRun3D(); else { RUN = null; G.state = 'select'; goStep('course'); } }
+      tapPos = null;
+      break;
     case 'mishap':
       G.timer -= dt;
       if (G.timer <= 0) { if (G.hearts <= 0) G.state = 'gameover'; else respawn(); }
@@ -2555,6 +2805,12 @@ function drawCardContent(it, i, sel, w) {
     drawSprite(fr, 0, 208, charW(c.id, SEL.step === 'sib' ? 120 : Math.min(130, 176 / c.size)), false, 1, 1 + (sel ? Math.sin(G.time * 3) * .015 : 0));
     title = c.name; blurb = c.blurb;
     if (SEL.step === 'hero') { const k = DASH_COURSES.filter((_, j) => DASHBEST[j]).length; if (G.mode === 'dash' && k) { top = `${k} of 10 courses run`; } }
+  } else if (it.kind === 'run3d') {
+    drawRunCardArt();
+    title = 'Into the Woods'; const b = DASHBEST.r3;
+    blurb = b ? `Best ${fmtTime(b.t)}` : 'A 3D run! Smash the crates';
+    top = '★ NEW · 3D RUN'; topCol = '#d9762b';
+    if (b) { ctx.fillStyle = MEDAL_COL[b.medal]; circle(w / 2 - 30, 30, 15); ctx.fillStyle = 'rgba(0,0,0,.15)'; circle(w / 2 - 30, 30, 10); ctx.fillStyle = MEDAL_COL[b.medal]; circle(w / 2 - 30, 30, 8); }
   } else if (it.kind === 'course') {
     drawCourseArt(it.c, it.i);
     title = it.c.name; const b = DASHBEST[it.i];
@@ -2600,6 +2856,19 @@ function drawCardContent(it, i, sel, w) {
   if (top) fit(top, 15, 600, 30, topCol);
   fit(title, 30, 700, 248, '#3b2a1e');
   fit(blurb, 17, 400, 274, '#7a6656');
+}
+// postcard for the 3D run: a trail heading into the trees, seen from behind the runner
+function drawRunCardArt() {
+  ctx.save(); rr(-100, 44, 200, 164, 16); ctx.clip();
+  const g = ctx.createLinearGradient(0, 44, 0, 120); g.addColorStop(0, '#7cc6f2'); g.addColorStop(1, '#d6f0fb'); ctx.fillStyle = g; ctx.fillRect(-100, 44, 200, 164);
+  ctx.fillStyle = '#5fae4a'; ctx.fillRect(-100, 112, 200, 100);
+  ctx.fillStyle = '#c9a06f'; ctx.beginPath(); ctx.moveTo(-6, 112); ctx.lineTo(6, 112); ctx.lineTo(70, 208); ctx.lineTo(-70, 208); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,240,210,.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-2, 114); ctx.lineTo(-24, 208); ctx.moveTo(2, 114); ctx.lineTo(24, 208); ctx.stroke();
+  for (const [x, y, s] of [[-80, 150, 1], [-58, 128, .6], [-40, 116, .35], [80, 150, 1], [56, 128, .6], [38, 116, .35]]) {
+    ctx.fillStyle = '#2f6b3c'; ctx.beginPath(); ctx.moveTo(x, y - 60 * s); ctx.lineTo(x + 22 * s, y); ctx.lineTo(x - 22 * s, y); ctx.fill(); }
+  ctx.fillStyle = '#c08a4f'; ctx.fillRect(12, 128, 14, 14); ctx.strokeStyle = '#8a5a2e'; ctx.lineWidth = 1.5; ctx.strokeRect(12, 128, 14, 14);
+  drawSprite(Math.floor(G.time * 6) % 2 ? G.hero + '_back1' : G.hero + '_back2', 0, 204, charW(G.hero, 62), false);
+  ctx.restore();
 }
 // a little postcard of a Dash course: its sky, ground and the piece it's known for
 function drawCourseArt(c, i) {
@@ -2690,10 +2959,33 @@ function drawSelect() {
   ctx.restore();
 }
 
+function drawPauseMenu() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,20,15,.5)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#fffaf0'; rr(W / 2 - 200, 110, 400, 358, 26); ctx.fill();
+      ctx.textAlign = 'center'; ctx.fillStyle = '#3b2a1e'; ctx.font = '700 40px Fredoka, sans-serif'; ctx.fillText('Paused', W / 2, 168);
+      MENU_BTNS.forEach((b, i) => {
+        ctx.fillStyle = ['#2f7a3a', '#e9a23b', '#c0583f', '#3b82c4'][i]; rr(b.x, b.y, b.w, b.h, 24); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '600 21px Fredoka, sans-serif'; ctx.fillText(b.label, W / 2, b.y + 31);
+        if (!isTouch) { ctx.font = '600 14px Fredoka, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(b.key, b.x + b.w - 22, b.y + 30); }
+      });
+      ctx.restore();
+}
 function render() {
   ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
   if (G.state === 'select') { drawSelect(); return; }
   if (G.state === 'howto') { drawHowTo(); return; }
+  if (RUN && (G.state === 'run3d' || G.state === 'run3dover' || G.state === 'run3dwin' || (G.state === 'paused' && G.prev === 'run3d'))) {
+    drawRun3D();
+    if (G.state === 'paused') drawPauseMenu();
+    if (G.state === 'run3dover') panel('Oof!', ['Too many bumps on the trail.', 'Jump logs, slide under branches, dodge rocks.'], pressText(), '#c0392b');
+    if (G.state === 'run3dwin' && RUN.res) {
+      const r = RUN.res;
+      panel(`${r.medal[0].toUpperCase() + r.medal.slice(1)} Run!`, [`Time ${fmtTime(r.t)}   ${r.newBest ? '★ New best!' : 'Best ' + fmtTime(r.best)}`,
+        `Crates smashed: ${RUN.smashed} of ${RUN.crates}`, `Berries: ${G.berries}`], isTouch ? 'Tap to continue' : 'Press Space to continue', '#2f7a3a');
+    }
+    return;
+  }
   if (G.state === 'title' || !L) { drawTitle(); return; }
   drawWorld();
   drawHUD();
@@ -2711,18 +3003,7 @@ function render() {
     }
     case 'gameover': if (L.dash) { panel('Caught on Camera!', ['The photographer got a clear shot!', 'Run faster to keep that photo blurry.', isTouch ? '' : 'Q quits to the menu'], pressText(), '#c0392b'); break; }
       panel('Oh no!', [`${nameOf(G.hero)} got a little too noticed.`, 'Catch your breath and try this part again.', isTouch ? '' : 'Q quits to the menu'], pressText(), '#c0392b'); break;
-    case 'paused': {
-      ctx.save();
-      ctx.fillStyle = 'rgba(10,20,15,.5)'; ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#fffaf0'; rr(W / 2 - 200, 110, 400, 358, 26); ctx.fill();
-      ctx.textAlign = 'center'; ctx.fillStyle = '#3b2a1e'; ctx.font = '700 40px Fredoka, sans-serif'; ctx.fillText('Paused', W / 2, 168);
-      MENU_BTNS.forEach((b, i) => {
-        ctx.fillStyle = ['#2f7a3a', '#e9a23b', '#c0583f', '#3b82c4'][i]; rr(b.x, b.y, b.w, b.h, 24); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = '600 21px Fredoka, sans-serif'; ctx.fillText(b.label, W / 2, b.y + 31);
-        if (!isTouch) { ctx.font = '600 14px Fredoka, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(b.key, b.x + b.w - 22, b.y + 30); }
-      });
-      ctx.restore(); break;
-    }
+    case 'paused': drawPauseMenu(); break;
     case 'win':
       if (G.timer <= 0) {
         const again = isTouch ? 'Tap to play again' : 'Press Space to play again';
