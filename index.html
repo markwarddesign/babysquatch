@@ -561,7 +561,7 @@ const BACK_EXTRA = {
 };
 const CHARS = [
   { id:'A', name:'Rascal', blurb:'Scrappy & brave', size:.82, fn:svgA, jump:{ al:140, ar:-140, mouth:'o' }, fall:{ al:70, ar:-70, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:40, ar:-40 } },
-  { id:'B', name:'Teddy', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
+  { id:'B', name:'Squatchy', blurb:'Soft & cuddly',   size:1, fn:svgB, jump:{ al:90, ar:-90 }, fall:{ al:50, ar:-50 }, hurt:{ eyes:'shut', al:30, ar:-30 } },
   { id:'C', name:'Scruff', blurb:'Wild & shaggy',   size:1.2, fn:svgC, jump:{ al:120, ar:-120, mouth:'o' }, fall:{ al:60, ar:-60, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:35, ar:-35 } },
   { id:'T', name:'Pip', blurb:'Tiny but mighty', size:.62, fn:svgT, jump:{ al:110, ar:-110, mouth:'o' }, fall:{ al:55, ar:-55, mouth:'o' }, hurt:{ eyes:'shut', mouth:'o', al:30, ar:-30 } },
   ...[['CL', 'Clara', 6, .9], ['LE', 'Lena', 8, 1.04], ['HA', 'Hannah', 12, 1.22], ['GK', 'Grandma Kathy', 'Age: top secret', 1.22],
@@ -939,12 +939,12 @@ const GEN = {
     tip:'Get close and it hops away. Keep chasing!', first:'Chase it down. Grandma is right behind you.' },
   // ---- the grown-ups' own adventures ----
   piggy:{ goal:'piggy', tent:'#3b6fb0', end:'den', skies:['day', 'day', 'day', 'sunset', 'day', 'day', 'sunset', 'sunset', 'night', 'night'],
-    win:['Home Sweet Home!', ['Teddy is snug in the den with Mama Squatch.', 'Dad is keeping the baby carrier.']],
-    names:['Sleepy Teddy', 'Giddy-Up!', 'Bumpy Trail', 'Splash Crossing', 'Ranger Dodge', 'Berry Snack Break', 'Bear Bounce', 'Sunset Shuffle', 'Starlight Trail', 'Home to Mama'],
-    story:['Dad found a sleepy baby squatch named Teddy. Into the baby carrier!', 'Teddy giggles every time Dad jumps.', 'Teddy kicks his feet the whole time.',
-      'Dad keeps Teddy\'s feet dry. Mostly.', 'Rangers would never believe this. Stay hidden!', 'Teddy shares a berry. It\'s a little sticky.',
-      'Bears make great trampolines. Teddy agrees.', 'Teddy is humming a squatch lullaby.', 'Teddy is pointing at every star.', 'Teddy can smell home! Find Mama\'s den.'],
-    tip:'Press jump again in the air: Teddy kicks for a boost!', first:'Carry Teddy home to Mama Squatch.' },
+    win:['Home Sweet Home!', ['Squatchy is snug in the den with Mama Squatch.', 'Dad is keeping the baby carrier.']],
+    names:['Sleepy Squatchy', 'Giddy-Up!', 'Bumpy Trail', 'Splash Crossing', 'Ranger Dodge', 'Berry Snack Break', 'Bear Bounce', 'Sunset Shuffle', 'Starlight Trail', 'Home to Mama'],
+    story:['Dad found a sleepy baby squatch named Squatchy. Into the baby carrier!', 'Squatchy giggles every time Dad jumps.', 'Squatchy kicks his feet the whole time.',
+      'Dad keeps Squatchy\'s feet dry. Mostly.', 'Rangers would never believe this. Stay hidden!', 'Squatchy shares a berry. It\'s a little sticky.',
+      'Bears make great trampolines. Squatchy agrees.', 'Squatchy is humming a squatch lullaby.', 'Squatchy is pointing at every star.', 'Squatchy can smell home! Find Mama\'s den.'],
+    tip:'Press jump again in the air: Squatchy kicks for a boost!', first:'Carry Squatchy home to Mama Squatch.' },
   sky:{ goal:'float', puffs:true, cliff:true, end:'goal', skies:['day', 'day', 'sunset', 'day', 'day', 'sunset', 'day', 'sunset', 'night', 'sunset'],
     win:['On Top of the World!', ['Pip can see the whole forest from up here.', 'Not bad for the tiniest squatch.']],
     names:['Pip Wakes Up', 'Dandelion Hill', 'Puffball Pass', 'Tall Grass Jungle', 'Windy Wisps', 'Cliffside Climb', 'Fluff Valley', 'Cloud Hopper', 'Moonlit Ledges', 'The Very Top'],
@@ -983,7 +983,7 @@ const ADVENTURES = [
   { id:'lena', name:'Lena\'s Lost Pages', blurb:'Find her journal pages', girl:'LE', levels:[...genLevels('lena'), 4] },
   { id:'hannah', name:'Hannah\'s Kite', blurb:'Chase her runaway kite', girl:'HA', levels:[...genLevels('hannah'), 5] },
   { id:'kathy', name:'Grandma\'s Pie', blurb:'Catch the pie bandit', girl:'GK', levels:[...genLevels('kathy'), 6] },
-  { id:'piggy', name:'Daddy Daycare', blurb:'Carry Teddy home', only:'DA', levels:genLevels('piggy') },
+  { id:'piggy', name:'Daddy Daycare', blurb:'Carry Squatchy home', only:'DA', levels:genLevels('piggy') },
   { id:'roundup', name:'Rainy Day Roundup', blurb:'Gather the girls', only:'MO', levels:genLevels('roundup') },
   { id:'sky', name:'Pip\'s Sky-High Day', blurb:'Float to the highest peak', only:'T', levels:genLevels('sky') },
 ];
@@ -1773,7 +1773,7 @@ function updatePlay(dt) {
     emit(5, p.x + p.w / 2, p.y + p.h, 'dust', { color:'rgba(220,200,170,.8)', vy:-20, vyr:40, g:0, life:.35 });
   }
   if (p.jumping && !keys.jump && p.vy < -300) p.vy = -300;
-  // Dad + Teddy: a second jump in mid-air
+  // Dad + Squatchy: a second jump in mid-air
   if (L.goal === 'piggy' && p.buffer > 0 && p.coyote <= 0 && !p.onGround && !p.boosted) {
     p.vy = -660; p.buffer = 0; p.boosted = true; p.jumping = true; G.whee = .9; sfx.boing();
     emit(8, p.x + p.w / 2, p.y + p.h, 'heart', { color:'#ffb3c1', g:-40, life:.7, spread:120, size:7 });
@@ -1851,7 +1851,7 @@ function updatePlay(dt) {
   // den
   if (E.den && p.x + p.w / 2 > E.den.x - 30) {
     G.state = 'win'; G.timer = 3; sfx.win(); P.vx = 0; P.crouch = false; P.hidden = false; finishAdventure();
-    if (L.goal === 'piggy') { G.hasSib = true; G.follow = 'B'; }   // Teddy hops down and runs to Mama
+    if (L.goal === 'piggy') { G.hasSib = true; G.follow = 'B'; }   // Squatchy hops down and runs to Mama
     P.x = E.den.x - 20 - P.w / 2; P.face = 1; G.winX = E.den.x; G.winY = E.den.bottom - 110;
     return;
   }
@@ -2045,7 +2045,7 @@ function updateSelect(dt) {
 }
 function beginAdventure() {
   if (G.sib === G.hero || isGirl(G.sib)) G.sib = CHARS.find(c => !c.girl && c.id !== G.hero).id;
-  if (G.adv.id === 'piggy') G.sib = 'B';   // Teddy's Mama waits at the den
+  if (G.adv.id === 'piggy') G.sib = 'B';   // Squatchy's Mama waits at the den
   try { localStorage.setItem('squatchPick', JSON.stringify({ hero:G.hero, sib:G.sib, adv:G.adv.id, pip:G.pip })); } catch (e) {}
   const from = PROG[G.adv.id] || 0;
   startGame(from > 0 && from < G.adv.levels.length ? from : 0);
@@ -2555,7 +2555,7 @@ function drawPlayer() {
   const lean = p.onGround && Math.abs(p.vx) > 120 && !p.crouch ? .07 : 0;
   const heroH = 66 * charById(A).size;
   drawSprite(f, cx, b + 2, charW(G.hero, 66), p.face < 0, sx, sy, 1, lean);
-  // Teddy facing out of Dad's front baby carrier, feet dangling
+  // Squatchy facing out of Dad's front baby carrier, feet dangling
   if (L.goal === 'piggy' && G.state !== 'win') {
     const moving = p.onGround && Math.abs(p.vx) > 20;
     const rf = p.hurtT > 0 ? 'B_hurt' : (!p.onGround || G.whee > 0) ? 'B_jump' : (G.time % 4.1 < .14 ? 'B_blink' : 'B_idle');
